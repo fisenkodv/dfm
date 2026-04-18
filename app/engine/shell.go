@@ -35,10 +35,10 @@ func (e *Engine) runShell(ctx context.Context, s *config.Shell, tally *Tally) er
 		if boolOr(opts.Stdin, false) {
 			cmd.Stdin = os.Stdin
 		}
-		if boolOr(opts.Stdout, false) {
+		if !quiet && boolOr(opts.Stdout, false) {
 			cmd.Stdout = os.Stdout
 		}
-		if boolOr(opts.Stderr, false) {
+		if !quiet && boolOr(opts.Stderr, false) {
 			cmd.Stderr = os.Stderr
 		}
 		if err := cmd.Run(); err != nil {
