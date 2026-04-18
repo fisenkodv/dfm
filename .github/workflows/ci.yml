@@ -9,14 +9,16 @@ permissions:
   contents: read
 
 jobs:
-  test:
+  build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@v6
         with:
-          go-version: "1.23"
+          persist-credentials: false
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: "1.26"
           cache: true
 
       - name: build
@@ -27,16 +29,6 @@ jobs:
 
       - name: coverage summary
         run: go tool cover -func=coverage.out | tail -1
-
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-go@v5
-        with:
-          go-version: "1.26"
-          cache: true
 
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v9
