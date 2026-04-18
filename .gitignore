@@ -1,0 +1,8 @@
+/dfm
+/dist/
+/coverage.out
+*.test
+*.prof
+.DS_Store
+.idea/
+.vscode/

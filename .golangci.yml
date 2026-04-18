@@ -1,0 +1,44 @@
+run:
+  timeout: 3m
+  tests: true
+
+linters:
+  disable-all: true
+  enable:
+    - errcheck
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+    - gofumpt
+    - goimports
+    - revive
+    - misspell
+    - unconvert
+    - unparam
+    - gosec
+    - bodyclose
+    - nilerr
+    - errorlint
+
+linters-settings:
+  revive:
+    severity: warning
+    rules:
+      - name: exported
+      - name: error-return
+      - name: error-naming
+      - name: if-return
+      - name: var-declaration
+      - name: unused-parameter
+      - name: unreachable-code
+  gosec:
+    excludes:
+      - G204 # subprocess with variable — intentional for shell directive
+
+issues:
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - gosec
+        - unparam
