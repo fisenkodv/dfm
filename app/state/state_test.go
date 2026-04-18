@@ -35,7 +35,7 @@ func TestSaveLoad(t *testing.T) {
 		t.Errorf("links: %+v", got.Links)
 	}
 
-	// verify file location honours XDG_STATE_HOME
+	// verify file location honors XDG_STATE_HOME
 	p, _ := Path()
 	if p != filepath.Join(dir, "dfm", "state.json") {
 		t.Errorf("path: %s", p)

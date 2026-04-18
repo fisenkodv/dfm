@@ -31,7 +31,7 @@ func (r *recorder) Warn(format string, args ...any) {
 // sandbox creates a fake dotfiles repo + home directory under t.TempDir().
 // Returns (baseDir, homeDir). HOME is set via t.Setenv so expand("~/...")
 // resolves into the sandbox.
-func sandbox(t *testing.T) (string, string) {
+func sandbox(t *testing.T) (baseDir, homeDir string) {
 	t.Helper()
 	root := t.TempDir()
 	base := filepath.Join(root, "repo")
@@ -87,7 +87,7 @@ func TestLink_CreatesFreshSymlink(t *testing.T) {
 	if tally.LinksCreated != 1 {
 		t.Errorf("LinksCreated = %d, want 1; warns=%v", tally.LinksCreated, r.warns)
 	}
-	got := readLink(t, filepath.Join(home, ".config/nvim"))
+	got := readLink(t, filepath.Join(home, ".config", "nvim"))
 	if got != source {
 		t.Errorf("link target = %q, want %q", got, source)
 	}
@@ -118,7 +118,7 @@ func TestLink_IdempotentWhenAlreadyCorrect(t *testing.T) {
 		t.Errorf("second apply: tally=%+v warns=%v", tally, r.warns)
 	}
 	// Target still correct.
-	if readLink(t, filepath.Join(home, ".config/nvim")) != source {
+	if readLink(t, filepath.Join(home, ".config", "nvim")) != source {
 		t.Errorf("link lost")
 	}
 }
@@ -129,7 +129,7 @@ func TestLink_RelinksStaleSymlinkWhenRelinkTrue(t *testing.T) {
 	bad := filepath.Join(base, "config", "bad")
 	writeFile(t, filepath.Join(good, "f"), "g")
 	writeFile(t, filepath.Join(bad, "f"), "b")
-	linkAt := filepath.Join(home, ".config/app")
+	linkAt := filepath.Join(home, ".config", "app")
 	_ = os.MkdirAll(filepath.Dir(linkAt), 0o755)
 	if err := os.Symlink(bad, linkAt); err != nil {
 		t.Fatal(err)
@@ -162,7 +162,7 @@ func TestLink_RefusesStaleWithoutRelink(t *testing.T) {
 	base, home := sandbox(t)
 	good := filepath.Join(base, "config", "good")
 	writeFile(t, filepath.Join(good, "f"), "g")
-	linkAt := filepath.Join(home, ".config/app")
+	linkAt := filepath.Join(home, ".config", "app")
 	_ = os.MkdirAll(filepath.Dir(linkAt), 0o755)
 	if err := os.Symlink("/some/other/place", linkAt); err != nil {
 		t.Fatal(err)
@@ -341,7 +341,7 @@ func TestCreate_MakesDirectory(t *testing.T) {
 func TestDefaults_AppliedToLaterDirectives(t *testing.T) {
 	base, home := sandbox(t)
 	writeFile(t, filepath.Join(base, "config", "app", "f"), "x")
-	stale := filepath.Join(home, ".config/app")
+	stale := filepath.Join(home, ".config", "app")
 	_ = os.MkdirAll(filepath.Dir(stale), 0o755)
 	if err := os.Symlink("/wrong", stale); err != nil {
 		t.Fatal(err)

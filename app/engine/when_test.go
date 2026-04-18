@@ -40,7 +40,7 @@ func TestWhen_SkipsUnmatchedDirectives(t *testing.T) {
 	}
 
 	if _, err := os.Lstat(filepath.Join(home, "skipped")); !os.IsNotExist(err) {
-		t.Errorf("skipped link materialised: %v", err)
+		t.Errorf("skipped link materialized: %v", err)
 	}
 	if _, err := os.Lstat(filepath.Join(home, "kept")); err != nil {
 		t.Errorf("kept link missing: %v", err)

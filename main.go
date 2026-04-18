@@ -39,6 +39,10 @@ type Opts struct {
 }
 
 func main() {
+	os.Exit(run())
+}
+
+func run() int {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
@@ -66,10 +70,11 @@ func main() {
 	if _, err := parser.Parse(); err != nil {
 		var fe *flags.Error
 		if errors.As(err, &fe) && fe.Type == flags.ErrHelp {
-			os.Exit(0)
+			return 0
 		}
-		os.Exit(1)
+		return 1
 	}
+	return 0
 }
 
 func setupLogger(debug, quiet bool) {

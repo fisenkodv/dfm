@@ -28,7 +28,7 @@ type Link struct {
 	Source string `json:"source"`
 }
 
-// Path returns the absolute path of the state file, honouring XDG_STATE_HOME.
+// Path returns the absolute path of the state file, honoring XDG_STATE_HOME.
 func Path() (string, error) {
 	if p := os.Getenv("XDG_STATE_HOME"); p != "" {
 		return filepath.Join(p, "dfm", "state.json"), nil
@@ -67,7 +67,7 @@ func Save(s *State) error {
 	if err != nil {
 		return err
 	}
-	if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(p), 0o750); err != nil {
 		return fmt.Errorf("state: mkdir: %w", err)
 	}
 	data, err := json.MarshalIndent(s, "", "  ")

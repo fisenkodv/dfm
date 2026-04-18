@@ -52,7 +52,7 @@ func (e *Engine) linkOne(entry config.LinkEntry, tally *Tally) error {
 
 	// Optionally create the parent directory of the link.
 	if boolOr(opts.Create, false) && !e.DryRun {
-		if err := os.MkdirAll(filepath.Dir(linkPath), 0o755); err != nil {
+		if err := os.MkdirAll(filepath.Dir(linkPath), 0o750); err != nil {
 			return fmt.Errorf("mkdir parent: %w", err)
 		}
 	}
@@ -97,13 +97,8 @@ func (e *Engine) linkOne(entry config.LinkEntry, tally *Tally) error {
 			return nil
 		}
 		if boolOr(opts.Relink, false) || boolOr(opts.Force, false) {
-			if !e.DryRun {
-				if err := os.Remove(linkPath); err != nil {
-					return fmt.Errorf("remove stale link: %w", err)
-				}
-				if err := e.writeSymlink(linkPath, desired); err != nil {
-					return err
-				}
+			if err := e.performRelink(linkPath, desired); err != nil {
+				return err
 			}
 			e.Reporter.Action("relinked %s -> %s", linkPath, desired)
 			e.record(ActionLinkRelink, linkPath, desired)
@@ -128,6 +123,16 @@ func (e *Engine) linkOne(entry config.LinkEntry, tally *Tally) error {
 	default:
 		return fmt.Errorf("unexpected file kind at %s", linkPath)
 	}
+}
+
+func (e *Engine) performRelink(linkPath, desired string) error {
+	if e.DryRun {
+		return nil
+	}
+	if err := os.Remove(linkPath); err != nil {
+		return fmt.Errorf("remove stale link: %w", err)
+	}
+	return e.writeSymlink(linkPath, desired)
 }
 
 // createSymlink creates a symlink (or records it in dry-run mode) and

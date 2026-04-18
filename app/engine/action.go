@@ -5,6 +5,7 @@ package engine
 // scraping log text.
 type ActionKind int
 
+// ActionKind constants enumerate the engine actions recorded during apply/diff.
 const (
 	ActionLinkCreate ActionKind = iota + 1
 	ActionLinkRelink

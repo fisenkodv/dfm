@@ -238,7 +238,7 @@ func expand(path string) string {
 // expandHome replaces a leading "~" with the current user's home directory.
 // ~user syntax for other users is not supported.
 func expandHome(path string) string {
-	if len(path) == 0 || path[0] != '~' {
+	if path == "" || path[0] != '~' {
 		return path
 	}
 	if len(path) > 1 && path[1] != '/' {

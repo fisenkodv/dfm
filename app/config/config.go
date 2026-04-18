@@ -6,6 +6,7 @@ package config
 // string so error messages print the original YAML key.
 type DirectiveKind string
 
+// DirectiveKind constants enumerate the supported directive types.
 const (
 	KindDefaults DirectiveKind = "defaults"
 	KindLink     DirectiveKind = "link"

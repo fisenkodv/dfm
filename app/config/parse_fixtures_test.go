@@ -20,7 +20,6 @@ func TestParse_RealProfiles(t *testing.T) {
 		t.Skipf("no profiles at %s: %v", dir, err)
 	}
 	for _, m := range matches {
-		m := m
 		t.Run(filepath.Base(m), func(t *testing.T) {
 			cfg, err := Load(m)
 			if err != nil {

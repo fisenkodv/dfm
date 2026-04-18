@@ -30,8 +30,8 @@ func (e *Engine) runClean(c *config.Clean, tally *Tally) error {
 	// On macOS, t.TempDir() produces /var/folders/... but EvalSymlinks
 	// resolves to /private/var/folders/... — we must accept both.
 	baseCandidates := []string{filepath.Clean(e.BaseDir)}
-	if real, err := filepath.EvalSymlinks(e.BaseDir); err == nil {
-		baseCandidates = append(baseCandidates, filepath.Clean(real))
+	if resolved, err := filepath.EvalSymlinks(e.BaseDir); err == nil {
+		baseCandidates = append(baseCandidates, filepath.Clean(resolved))
 	}
 
 	for _, entry := range c.Entries {
