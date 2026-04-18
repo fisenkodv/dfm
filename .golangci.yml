@@ -1,44 +1,83 @@
-run:
-  timeout: 3m
-  tests: true
-
+version: "2"
 linters:
-  disable-all: true
+  default: none
   enable:
-    - errcheck
+    - copyloopvar
+    - dupl
+    - gochecknoinits
+    - gocritic
+    - gosec
     - govet
     - ineffassign
-    - staticcheck
-    - unused
-    - gofumpt
-    - goimports
-    - revive
     - misspell
+    - nakedret
+    - prealloc
+    - revive
+    - staticcheck
     - unconvert
-    - unparam
-    - gosec
-    - bodyclose
-    - nilerr
-    - errorlint
-
-linters-settings:
-  revive:
-    severity: warning
+    - unused
+    - testifylint
+    - modernize
+    - nestif
+  settings:
+    gosec:
+      excludes:
+        - G204 # subprocess with variable — intentional for shell directive
+    goconst:
+      min-len: 2
+      min-occurrences: 2
+    gocritic:
+      disabled-checks:
+        - wrapperFunc
+        - hugeParam
+        - rangeValCopy
+        - singleCaseSwitch
+        - ifElseChain
+      enabled-tags:
+        - performance
+        - style
+        - experimental
+    lll:
+      line-length: 140
+    misspell:
+      locale: US
+  exclusions:
+    generated: lax
     rules:
-      - name: exported
-      - name: error-return
-      - name: error-naming
-      - name: if-return
-      - name: var-declaration
-      - name: unused-parameter
-      - name: unreachable-code
-  gosec:
-    excludes:
-      - G204 # subprocess with variable — intentional for shell directive
-
-issues:
-  exclude-rules:
-    - path: _test\.go
-      linters:
-        - gosec
-        - unparam
+      - linters:
+          - revive
+        text: 'package-comments: should have a package comment'
+      - linters:
+          - staticcheck
+        text: at least one file in a package should have a package comment
+      - linters:
+          - golint
+        text: should have a package comment, unless it's in another file for this package
+      - linters:
+          - gosec
+        text: integer overflow conversion
+      - linters:
+          - staticcheck
+        text: "QF1012"
+      - linters:
+          - dupl
+          - gosec
+        path: _test\.go
+      - linters:
+          - revive
+          - unparam
+          - unused
+        path: _test\.go$
+        text: unused-parameter
+    paths:
+      - vendor
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
