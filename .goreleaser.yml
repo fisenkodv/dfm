@@ -6,9 +6,6 @@ before:
   hooks:
     - go mod tidy
 
-signs:
-  - artifacts: checksum
-
 dist: .bin
 
 builds:
@@ -44,7 +41,7 @@ archives:
       - docs/*
 
 snapshot:
-  name_template: "{{ incpatch .Version }}-next"
+  version_template: "{{ incpatch .Version }}-next"
 
 
 
