@@ -1,6 +1,5 @@
-/dfm
-/dist/
-/coverage.out
+.bin/
+coverage.out
 *.test
 *.prof
 .DS_Store

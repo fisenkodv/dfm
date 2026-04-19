@@ -9,6 +9,8 @@ before:
 signs:
   - artifacts: checksum
 
+dist: .bin
+
 builds:
   - id: dfm
     main: .
