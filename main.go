@@ -49,7 +49,7 @@ func run() int {
 	var opts Opts
 	parser := flags.NewParser(&opts, flags.Default)
 	parser.Name = "dfm"
-	parser.LongDescription = fmt.Sprintf("dotfiles manager (rev %s)", revision)
+	parser.LongDescription = fmt.Sprintf("dotfiles manager (%s)", revision)
 
 	// Inject shared config into every subcommand before Execute runs.
 	parser.CommandHandler = func(command flags.Commander, args []string) error {
