@@ -27,8 +27,24 @@ Profiles are read from `./profiles/<name>.conf.yaml` relative to the base dir (`
 | `dfm doctor`             | Verify installed symlinks still resolve  |
 | `dfm status`             | Show last applied profiles and timestamp |
 | `dfm list`               | List profiles found in `./profiles/`     |
+| `dfm completion <shell>` | Output shell completion script           |
 
 Global flags: `-C <dir>`, `-c <path>`, `--dry-run`, `--dbg`.
+
+## Shell completion
+
+```sh
+# fish
+dfm completion fish > ~/.config/fish/completions/dfm.fish
+
+# bash — add to ~/.bashrc
+source <(dfm completion bash)
+
+# zsh — add to ~/.zshrc
+source <(dfm completion zsh)
+```
+
+Completes subcommands, flags, and profile names (via `dfm list`). Set `$DFM_DIR` to point completions at a non-cwd base directory.
 
 ## Supported directives
 

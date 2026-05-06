@@ -31,11 +31,12 @@ type Opts struct {
 	Debug      bool   `long:"dbg" description:"enable debug logging"`
 	Quiet      bool   `short:"q" long:"quiet" description:"suppress non-error output"`
 
-	Apply  cmd.ApplyCmd  `command:"apply" description:"apply one or more profiles"`
-	Diff   cmd.DiffCmd   `command:"diff" description:"show planned changes without writing"`
-	Doctor cmd.DoctorCmd `command:"doctor" description:"verify installed symlinks still resolve"`
-	Status cmd.StatusCmd `command:"status" description:"show last applied profiles"`
-	List   cmd.ListCmd   `command:"list" description:"list available profiles"`
+	Apply      cmd.ApplyCmd      `command:"apply" description:"apply one or more profiles"`
+	Diff       cmd.DiffCmd       `command:"diff" description:"show planned changes without writing"`
+	Doctor     cmd.DoctorCmd     `command:"doctor" description:"verify installed symlinks still resolve"`
+	Status     cmd.StatusCmd     `command:"status" description:"show last applied profiles"`
+	List       cmd.ListCmd       `command:"list" description:"list available profiles"`
+	Completion cmd.CompletionCmd `command:"completion" description:"output shell completion script"`
 }
 
 func main() {
