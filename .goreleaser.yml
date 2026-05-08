@@ -46,5 +46,5 @@ snapshot:
 
 
 release:
-  draft: true
+  draft: false
   prerelease: auto
