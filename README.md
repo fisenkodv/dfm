@@ -5,7 +5,7 @@ Standalone, single-binary dotfiles manager. Profile format is inspired by [dotbo
 ## Install
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/fisenkodv/dfm/master/scripts/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/bitcldr/dfm/main/scripts/install.sh | sh
 ```
 
 Drops `dfm` into `~/.local/bin` (override with `DFM_INSTALL_DIR`). Pin a version with `DFM_VERSION=vX.Y.Z`.

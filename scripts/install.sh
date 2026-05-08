@@ -9,7 +9,7 @@
 
 set -eu
 
-REPO="${DFM_REPO:-fisenkodv/dfm}"
+REPO="${DFM_REPO:-bitcldr/dfm}"
 INSTALL_DIR="${DFM_INSTALL_DIR:-$HOME/.local/bin}"
 VERSION="${DFM_VERSION:-latest}"
 
@@ -22,12 +22,12 @@ detect_platform() {
     uname_s=$(uname -s)
     uname_m=$(uname -m)
     case "$uname_s" in
-        Darwin) os=darwin ;;
+        Darwin) os=macos ;;
         Linux)  os=linux ;;
         *) die "unsupported OS: $uname_s" ;;
     esac
     case "$uname_m" in
-        x86_64|amd64)   arch=amd64 ;;
+        x86_64|amd64)   arch=x86_64 ;;
         arm64|aarch64)  arch=arm64 ;;
         *) die "unsupported arch: $uname_m" ;;
     esac
@@ -57,9 +57,7 @@ main() {
     version=$(resolve_version)
     [ -n "$version" ] || die "could not resolve latest version"
 
-    # strip leading "v" for archive file naming; keep it for the URL tag path
-    bare="${version#v}"
-    archive="dfm_${bare}_${platform}.tar.gz"
+    archive="dfm_${version}_${platform}.tar.gz"
     url="https://github.com/$REPO/releases/download/${version}/${archive}"
 
     tmp=$(mktemp -d)
