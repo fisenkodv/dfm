@@ -4,6 +4,15 @@ Standalone, single-binary dotfiles manager. Profile format is inspired by [dotbo
 
 ## Install
 
+**macOS (Homebrew)**
+
+```sh
+brew tap bitcldr/tap
+brew install dfm
+```
+
+**Linux / macOS (shell script)**
+
 ```sh
 curl -fsSL https://raw.githubusercontent.com/bitcldr/dfm/main/scripts/install.sh | sh
 ```
