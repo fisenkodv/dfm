@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/fisenkodv/dfm/app/state"
+	"github.com/bitcldr/dfm/app/state"
 )
 
 // DoctorCmd verifies that previously applied symlinks still resolve to the

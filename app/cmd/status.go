@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fisenkodv/dfm/app/state"
+	"github.com/bitcldr/dfm/app/state"
 )
 
 // StatusCmd prints the profiles that were most recently applied on this

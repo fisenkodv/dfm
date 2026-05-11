@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fisenkodv/dfm/app/config"
+	"github.com/bitcldr/dfm/app/config"
 )
 
 // recorder is a Reporter that captures messages for assertions.

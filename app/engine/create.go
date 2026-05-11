@@ -4,7 +4,7 @@ import (
 	"errors"
 	"os"
 
-	"github.com/fisenkodv/dfm/app/config"
+	"github.com/bitcldr/dfm/app/config"
 )
 
 // runCreate mkdirs the listed paths. Idempotent: existing paths are left

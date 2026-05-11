@@ -5,7 +5,7 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/fisenkodv/dfm/app/config"
+	"github.com/bitcldr/dfm/app/config"
 )
 
 // runShell executes a `shell:` directive. Each command runs under /bin/sh,

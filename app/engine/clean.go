@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/fisenkodv/dfm/app/config"
+	"github.com/bitcldr/dfm/app/config"
 )
 
 // isInsideAny reports whether path sits inside any of the candidate prefixes.

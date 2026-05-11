@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/fisenkodv/dfm/app/config"
+	"github.com/bitcldr/dfm/app/config"
 )
 
 // runLink executes a `link:` directive.

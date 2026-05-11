@@ -12,8 +12,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/fisenkodv/dfm/app/cond"
-	"github.com/fisenkodv/dfm/app/config"
+	"github.com/bitcldr/dfm/app/cond"
+	"github.com/bitcldr/dfm/app/config"
 )
 
 // Reporter emits user-facing progress lines. main() wires this to stdout;

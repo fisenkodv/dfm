@@ -1,4 +1,4 @@
-module github.com/fisenkodv/dfm
+module github.com/bitcldr/dfm
 
 go 1.26.2
 

@@ -16,7 +16,7 @@ import (
 
 	"github.com/jessevdk/go-flags"
 
-	"github.com/fisenkodv/dfm/app/cmd"
+	"github.com/bitcldr/dfm/app/cmd"
 )
 
 // revision is set at build time via -ldflags "-X main.revision=...".

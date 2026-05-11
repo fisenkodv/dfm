@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/fisenkodv/dfm/app/cond"
-	"github.com/fisenkodv/dfm/app/config"
+	"github.com/bitcldr/dfm/app/cond"
+	"github.com/bitcldr/dfm/app/config"
 )
 
 // TestWhen_SkipsUnmatchedDirectives verifies that directives whose `when:`

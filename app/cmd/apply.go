@@ -6,9 +6,9 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/fisenkodv/dfm/app/config"
-	"github.com/fisenkodv/dfm/app/engine"
-	"github.com/fisenkodv/dfm/app/state"
+	"github.com/bitcldr/dfm/app/config"
+	"github.com/bitcldr/dfm/app/engine"
+	"github.com/bitcldr/dfm/app/state"
 )
 
 // ApplyCmd applies one or more profiles to the user's home directory by

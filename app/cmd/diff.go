@@ -6,8 +6,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/fisenkodv/dfm/app/config"
-	"github.com/fisenkodv/dfm/app/engine"
+	"github.com/bitcldr/dfm/app/config"
+	"github.com/bitcldr/dfm/app/engine"
 )
 
 // DiffCmd shows the set of filesystem changes that would result from

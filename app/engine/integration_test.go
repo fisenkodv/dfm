@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fisenkodv/dfm/app/config"
+	"github.com/bitcldr/dfm/app/config"
 )
 
 // TestApply_RealBaseProfile runs the user's actual base profile against a
