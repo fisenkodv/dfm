@@ -26,6 +26,7 @@ func (c *DiffCmd) Execute(_ []string) error {
 	if err != nil {
 		return err
 	}
+
 	paths, err := resolveProfilePaths(baseAbs, c.globals.ConfigPath, c.Args.Profiles)
 	if err != nil {
 		return err
@@ -34,11 +35,13 @@ func (c *DiffCmd) Execute(_ []string) error {
 	r := quietReporter{}
 	eng := engine.New(baseAbs, r)
 	eng.DryRun = true
+
 	for _, p := range paths {
 		cfg, err := config.Load(p)
 		if err != nil {
 			return err
 		}
+
 		if _, err := eng.Apply(c.Context(), cfg); err != nil {
 			return fmt.Errorf("diff %s: %w", p, err)
 		}
@@ -71,6 +74,7 @@ func printDiff(w *os.File, actions []engine.Action) {
 		engine.ActionCleanRemove,
 		engine.ActionShellRun,
 	}
+
 	for _, a := range actions {
 		groups[a.Kind] = append(groups[a.Kind], a)
 	}
@@ -81,12 +85,15 @@ func printDiff(w *os.File, actions []engine.Action) {
 		if len(list) == 0 {
 			continue
 		}
+
 		empty = false
 		fmt.Fprintf(w, "%s (%d)\n", headerFor(k), len(list))
+
 		for _, a := range list {
 			fmt.Fprintf(w, "  %s\n", formatAction(a))
 		}
 	}
+
 	if empty {
 		fmt.Fprintln(w, "no changes")
 	}
@@ -113,6 +120,7 @@ func headerFor(k engine.ActionKind) string {
 	case engine.ActionShellRun:
 		return "$ shell commands to run"
 	}
+
 	return "? unknown"
 }
 
@@ -141,18 +149,24 @@ func resolveProfilePaths(baseAbs, configPath string, profiles []string) ([]strin
 		if err != nil {
 			return nil, err
 		}
+
 		return []string{p}, nil
 	}
+
 	if len(profiles) == 0 {
 		return nil, errors.New("at least one profile is required")
 	}
+
 	out := make([]string, 0, len(profiles))
+
 	for _, name := range profiles {
 		p := filepath.Join(baseAbs, "profiles", name+".conf.yaml")
 		if _, err := os.Stat(p); err != nil {
 			return nil, fmt.Errorf("profile %q not found at %s", name, p)
 		}
+
 		out = append(out, p)
 	}
+
 	return out, nil
 }

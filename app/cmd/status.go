@@ -20,15 +20,18 @@ func (c *StatusCmd) Execute(_ []string) error {
 	if err != nil {
 		return err
 	}
+
 	if s == nil {
 		fmt.Println("no profiles have been applied on this machine yet")
 		return nil
 	}
+
 	p, _ := state.Path()
 	fmt.Printf("state file:   %s\n", p)
 	fmt.Printf("last applied: %s\n", strings.Join(s.LastApplied, " "))
 	fmt.Printf("applied at:   %s (%s ago)\n", s.AppliedAt.Local().Format(time.RFC3339), humanSince(s.AppliedAt))
 	fmt.Printf("links:        %d\n", len(s.Links))
+
 	return nil
 }
 

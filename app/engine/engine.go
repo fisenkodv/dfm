@@ -75,10 +75,12 @@ func (e *Engine) record(kind ActionKind, from, to string) {
 // Tally without aborting.
 func (e *Engine) Apply(ctx context.Context, cfg *config.Config) (Tally, error) {
 	var tally Tally
+
 	for _, d := range cfg.Directives {
 		if err := ctx.Err(); err != nil {
 			return tally, err
 		}
+
 		if d.When != "" {
 			ok, err := cond.Eval(d.When, e.Cond)
 			if err != nil {
@@ -89,6 +91,7 @@ func (e *Engine) Apply(ctx context.Context, cfg *config.Config) (Tally, error) {
 				continue
 			}
 		}
+
 		switch d.Kind {
 		case config.KindDefaults:
 			e.Defaults.merge(d.Defaults)
@@ -112,6 +115,7 @@ func (e *Engine) Apply(ctx context.Context, cfg *config.Config) (Tally, error) {
 			return tally, fmt.Errorf("engine: unknown directive %q at line %d", d.Kind, d.Line)
 		}
 	}
+
 	return tally, nil
 }
 
@@ -127,12 +131,15 @@ func (m *mergedDefaults) merge(d *config.Defaults) {
 	if d == nil {
 		return
 	}
+
 	if d.Link != nil {
 		m.Link = mergeLinkOpts(m.Link, *d.Link)
 	}
+
 	if d.Shell != nil {
 		m.Shell = mergeShellOpts(m.Shell, *d.Shell)
 	}
+
 	if d.Clean != nil {
 		m.Clean = mergeCleanOpts(m.Clean, *d.Clean)
 	}
@@ -177,6 +184,7 @@ func mergeLinkOpts(base, overlay config.LinkOptions) config.LinkOptions {
 	if len(overlay.Exclude) > 0 {
 		base.Exclude = overlay.Exclude
 	}
+
 	return base
 }
 
@@ -193,6 +201,7 @@ func mergeShellOpts(base, overlay config.ShellOptions) config.ShellOptions {
 	if overlay.Quiet != nil {
 		base.Quiet = overlay.Quiet
 	}
+
 	return base
 }
 
@@ -203,6 +212,7 @@ func mergeCleanOpts(base, overlay config.CleanOptions) config.CleanOptions {
 	if overlay.Recursive != nil {
 		base.Recursive = overlay.Recursive
 	}
+
 	return base
 }
 
@@ -211,6 +221,7 @@ func boolOr(p *bool, fallback bool) bool {
 	if p == nil {
 		return fallback
 	}
+
 	return *p
 }
 
@@ -218,6 +229,7 @@ func strOr(p *string, fallback string) string {
 	if p == nil {
 		return fallback
 	}
+
 	return *p
 }
 
@@ -227,6 +239,7 @@ func (e *Engine) resolveBase(source string) string {
 	if filepath.IsAbs(source) {
 		return source
 	}
+
 	return filepath.Join(e.BaseDir, source)
 }
 
@@ -241,15 +254,18 @@ func expandHome(path string) string {
 	if path == "" || path[0] != '~' {
 		return path
 	}
+
 	if len(path) > 1 && path[1] != '/' {
 		// ~user/foo — rare; fall back to HOME of current user for safety.
 		home, _ := os.UserHomeDir()
 		return home + path[1:]
 	}
+
 	home, err := os.UserHomeDir()
 	if err != nil || home == "" {
 		return path
 	}
+
 	return home + path[1:]
 }
 

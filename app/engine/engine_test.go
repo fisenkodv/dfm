@@ -21,9 +21,11 @@ type recorder struct {
 func (r *recorder) Action(format string, args ...any) {
 	r.actions = append(r.actions, fmt.Sprintf(format, args...))
 }
+
 func (r *recorder) Info(format string, args ...any) {
 	r.infos = append(r.infos, fmt.Sprintf(format, args...))
 }
+
 func (r *recorder) Warn(format string, args ...any) {
 	r.warns = append(r.warns, fmt.Sprintf(format, args...))
 }
@@ -33,24 +35,31 @@ func (r *recorder) Warn(format string, args ...any) {
 // resolves into the sandbox.
 func sandbox(t *testing.T) (baseDir, homeDir string) {
 	t.Helper()
+
 	root := t.TempDir()
 	base := filepath.Join(root, "repo")
 	home := filepath.Join(root, "home")
+
 	if err := os.MkdirAll(filepath.Join(base, "config"), 0o755); err != nil {
 		t.Fatal(err)
 	}
+
 	if err := os.MkdirAll(filepath.Join(home, ".config"), 0o755); err != nil {
 		t.Fatal(err)
 	}
+
 	t.Setenv("HOME", home)
+
 	return base, home
 }
 
 func writeFile(t *testing.T, path, contents string) {
 	t.Helper()
+
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		t.Fatal(err)
 	}
+
 	if err := os.WriteFile(path, []byte(contents), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -58,10 +67,12 @@ func writeFile(t *testing.T, path, contents string) {
 
 func readLink(t *testing.T, path string) string {
 	t.Helper()
+
 	got, err := os.Readlink(path)
 	if err != nil {
 		t.Fatalf("readlink %s: %v", path, err)
 	}
+
 	return got
 }
 
@@ -84,9 +95,11 @@ func TestLink_CreatesFreshSymlink(t *testing.T) {
 	if err != nil {
 		t.Fatalf("apply: %v", err)
 	}
+
 	if tally.LinksCreated != 1 {
 		t.Errorf("LinksCreated = %d, want 1; warns=%v", tally.LinksCreated, r.warns)
 	}
+
 	got := readLink(t, filepath.Join(home, ".config", "nvim"))
 	if got != source {
 		t.Errorf("link target = %q, want %q", got, source)
@@ -108,15 +121,18 @@ func TestLink_IdempotentWhenAlreadyCorrect(t *testing.T) {
 	if _, err := e.Apply(context.Background(), cfg); err != nil {
 		t.Fatal(err)
 	}
+
 	r := &recorder{}
 	e2 := New(base, r)
 	tally, err := e2.Apply(context.Background(), cfg)
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	if tally.LinksOK != 1 || tally.LinksCreated != 0 {
 		t.Errorf("second apply: tally=%+v warns=%v", tally, r.warns)
 	}
+
 	// Target still correct.
 	if readLink(t, filepath.Join(home, ".config", "nvim")) != source {
 		t.Errorf("link lost")
@@ -150,9 +166,11 @@ func TestLink_RelinksStaleSymlinkWhenRelinkTrue(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	if tally.LinksRelinked != 1 {
 		t.Errorf("LinksRelinked = %d, want 1. warns=%v", tally.LinksRelinked, r.warns)
 	}
+
 	if readLink(t, linkAt) != good {
 		t.Errorf("link not updated")
 	}
@@ -179,9 +197,11 @@ func TestLink_RefusesStaleWithoutRelink(t *testing.T) {
 	if _, err := e.Apply(context.Background(), cfg); err != nil {
 		t.Fatal(err)
 	}
+
 	if len(r.warns) == 0 {
 		t.Errorf("expected a warning about stale link; warns=%v", r.warns)
 	}
+
 	if readLink(t, linkAt) != "/some/other/place" {
 		t.Errorf("link was unexpectedly modified")
 	}
@@ -206,13 +226,16 @@ func TestLink_BacksUpExistingRegularFile(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	if tally.LinksBackedUp != 1 || tally.LinksCreated != 1 {
 		t.Errorf("tally=%+v warns=%v", tally, r.warns)
 	}
+
 	// Now linked to repo file.
 	if target := readLink(t, existing); target != source {
 		t.Errorf("link target %q, want %q", target, source)
 	}
+
 	// Backup sits somewhere under ~/.dotfiles-backup/
 	backupRoot := filepath.Join(home, ".dotfiles-backup")
 	found := false
@@ -226,8 +249,10 @@ func TestLink_BacksUpExistingRegularFile(t *testing.T) {
 				found = true
 			}
 		}
+
 		return nil
 	})
+
 	if !found {
 		t.Errorf("backup of pre-existing .zshrc not found under %s", backupRoot)
 	}
@@ -247,13 +272,16 @@ func TestShell_RunsCommandInBaseDir(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	if tally.ShellRun != 1 {
 		t.Errorf("ShellRun=%d", tally.ShellRun)
 	}
+
 	data, err := os.ReadFile(marker)
 	if err != nil {
 		t.Fatalf("marker not written: %v", err)
 	}
+
 	if strings.TrimSpace(string(data)) != "ok" {
 		t.Errorf("marker=%q", data)
 	}
@@ -274,6 +302,7 @@ func TestShell_FailedCommandIsReported(t *testing.T) {
 	if err != nil {
 		t.Fatalf("apply returned fatal error: %v", err)
 	}
+
 	if tally.ShellFailed != 1 || tally.ShellRun != 1 {
 		t.Errorf("tally=%+v warns=%v", tally, r.warns)
 	}
@@ -285,6 +314,7 @@ func TestClean_RemovesDeadLinkIntoBase(t *testing.T) {
 	if err := os.Symlink(gone, filepath.Join(home, "dangling")); err != nil {
 		t.Fatal(err)
 	}
+
 	outside := filepath.Join(t.TempDir(), "not-in-base")
 	if err := os.Symlink(outside, filepath.Join(home, "outside")); err != nil {
 		t.Fatal(err)
@@ -300,12 +330,15 @@ func TestClean_RemovesDeadLinkIntoBase(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	if tally.Cleaned != 1 {
 		t.Errorf("Cleaned=%d, want 1 (only the in-base dangler); warns=%v", tally.Cleaned, r.warns)
 	}
+
 	if _, err := os.Lstat(filepath.Join(home, "dangling")); !os.IsNotExist(err) {
 		t.Errorf("in-base dead link should be gone: %v", err)
 	}
+
 	if _, err := os.Lstat(filepath.Join(home, "outside")); err != nil {
 		t.Errorf("out-of-base dead link should remain: %v", err)
 	}
@@ -323,16 +356,20 @@ func TestCreate_MakesDirectory(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	if tally.Created != 1 {
 		t.Errorf("Created=%d", tally.Created)
 	}
+
 	fi, err := os.Stat(filepath.Join(home, "secrets"))
 	if err != nil {
 		t.Fatalf("stat: %v", err)
 	}
+
 	if !fi.IsDir() {
 		t.Errorf("not a dir")
 	}
+
 	if got := fi.Mode().Perm(); got != 0o700 {
 		t.Errorf("mode = %o, want 0700", got)
 	}
@@ -365,6 +402,7 @@ func TestDefaults_AppliedToLaterDirectives(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	if tally.LinksRelinked != 1 {
 		t.Errorf("defaults not applied: %+v", tally)
 	}
@@ -373,5 +411,6 @@ func TestDefaults_AppliedToLaterDirectives(t *testing.T) {
 // linkPath returns a LinkOptions with Path set, the common test shorthand.
 func linkPath(p string) config.LinkOptions {
 	s := p
+
 	return config.LinkOptions{Path: &s}
 }

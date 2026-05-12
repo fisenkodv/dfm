@@ -19,6 +19,7 @@ func isInsideAny(path string, prefixes []string) bool {
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -37,10 +38,12 @@ func (e *Engine) runClean(c *config.Clean, tally *Tally) error {
 	for _, entry := range c.Entries {
 		opts := mergeCleanOpts(e.Defaults.Clean, entry.Options)
 		target := expand(entry.Target)
+
 		if err := e.cleanDir(target, baseCandidates, boolOr(opts.Force, false), boolOr(opts.Recursive, false), tally); err != nil {
 			e.Reporter.Warn("clean %s: %v", entry.Target, err)
 		}
 	}
+
 	return nil
 }
 
@@ -52,46 +55,57 @@ func (e *Engine) cleanDir(dir string, baseCandidates []string, force, recursive 
 	if err != nil {
 		return err
 	}
+
 	entries, err := os.ReadDir(dir)
 	if err != nil {
 		return err
 	}
+
 	for _, de := range entries {
 		path := filepath.Join(dir, de.Name())
 		info, err := os.Lstat(path)
 		if err != nil {
 			continue
 		}
+
 		if recursive && info.IsDir() {
 			_ = e.cleanDir(path, baseCandidates, force, recursive, tally)
 			continue
 		}
+
 		if info.Mode()&os.ModeSymlink == 0 {
 			continue
 		}
+
 		// Symlink — check if it's broken (target doesn't exist).
 		if _, err := os.Stat(path); err == nil {
 			continue // link still resolves
 		}
+
 		points, err := os.Readlink(path)
 		if err != nil {
 			continue
 		}
+
 		if !filepath.IsAbs(points) {
 			points = filepath.Join(filepath.Dir(path), points)
 		}
+
 		if !force && !isInsideAny(points, baseCandidates) {
 			continue // links outside base dir are left alone
 		}
+
 		if !e.DryRun {
 			if err := os.Remove(path); err != nil {
 				e.Reporter.Warn("remove %s: %v", path, err)
 				continue
 			}
 		}
+
 		e.Reporter.Action("removed dead link %s -> %s", path, points)
 		e.record(ActionCleanRemove, path, points)
 		tally.Cleaned++
 	}
+
 	return nil
 }

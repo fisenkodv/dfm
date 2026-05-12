@@ -24,6 +24,7 @@ func (c *DoctorCmd) Execute(_ []string) error {
 	if err != nil {
 		return err
 	}
+
 	if s == nil {
 		fmt.Println("no applied state found — run `dfm apply` first")
 		return nil
@@ -31,20 +32,24 @@ func (c *DoctorCmd) Execute(_ []string) error {
 
 	var problems []string
 	ok := 0
+
 	for _, l := range s.Links {
 		dest, err := os.Readlink(l.Target)
 		if errors.Is(err, os.ErrNotExist) {
 			problems = append(problems, fmt.Sprintf("missing: %s", l.Target))
 			continue
 		}
+
 		if err != nil {
 			problems = append(problems, fmt.Sprintf("not a symlink: %s (%v)", l.Target, err))
 			continue
 		}
+
 		if dest != l.Source {
 			problems = append(problems, fmt.Sprintf("drifted: %s -> %s (want %s)", l.Target, dest, l.Source))
 			continue
 		}
+
 		ok++
 	}
 
@@ -52,8 +57,10 @@ func (c *DoctorCmd) Execute(_ []string) error {
 	for _, p := range problems {
 		fmt.Printf("  ! %s\n", p)
 	}
+
 	if len(problems) > 0 {
 		return fmt.Errorf("%d link(s) need attention", len(problems))
 	}
+
 	return nil
 }

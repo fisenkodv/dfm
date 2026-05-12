@@ -55,9 +55,11 @@ func run() int {
 	// Inject shared config into every subcommand before Execute runs.
 	parser.CommandHandler = func(command flags.Commander, args []string) error {
 		setupLogger(opts.Debug, opts.Quiet)
+
 		if c, ok := command.(cmd.ContextSetter); ok {
 			c.SetContext(ctx)
 		}
+
 		if c, ok := command.(cmd.GlobalsSetter); ok {
 			c.SetGlobals(cmd.Globals{
 				BaseDir:    opts.BaseDir,
@@ -65,27 +67,33 @@ func run() int {
 				Revision:   revision,
 			})
 		}
+
 		return command.Execute(args)
 	}
 
 	if _, err := parser.Parse(); err != nil {
 		var fe *flags.Error
+
 		if errors.As(err, &fe) && fe.Type == flags.ErrHelp {
 			return 0
 		}
+
 		return 1
 	}
+
 	return 0
 }
 
 func setupLogger(debug, quiet bool) {
 	level := slog.LevelInfo
+
 	switch {
 	case debug:
 		level = slog.LevelDebug
 	case quiet:
 		level = slog.LevelWarn
 	}
+
 	h := slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: level})
 	slog.SetDefault(slog.New(h))
 }
