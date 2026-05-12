@@ -25,6 +25,7 @@ func (c *CompletionCmd) Execute(_ []string) error {
 	default:
 		return fmt.Errorf("unknown shell %q — supported: bash, zsh, fish", c.Args.Shell)
 	}
+
 	return nil
 }
 

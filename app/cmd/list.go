@@ -19,23 +19,30 @@ func (c *ListCmd) Execute(_ []string) error {
 	if err != nil {
 		return err
 	}
+
 	dir := filepath.Join(baseAbs, "profiles")
 	entries, err := os.ReadDir(dir)
 	if err != nil {
 		return fmt.Errorf("list: read %s: %w", dir, err)
 	}
+
 	names := make([]string, 0, len(entries))
+
 	for _, e := range entries {
 		if e.IsDir() {
 			continue
 		}
+
 		if n, ok := strings.CutSuffix(e.Name(), ".conf.yaml"); ok {
 			names = append(names, n)
 		}
 	}
+
 	sort.Strings(names)
+
 	for _, n := range names {
 		fmt.Println(n)
 	}
+
 	return nil
 }

@@ -15,12 +15,16 @@ func Load(path string) (*Config, error) {
 	if err != nil {
 		return nil, fmt.Errorf("config: open %s: %w", path, err)
 	}
+
 	defer func() { _ = f.Close() }()
+
 	cfg, err := Parse(f)
 	if err != nil {
 		return nil, fmt.Errorf("config: parse %s: %w", path, err)
 	}
+
 	cfg.Path = path
+
 	return cfg, nil
 }
 
@@ -31,14 +35,18 @@ func Parse(r io.Reader) (*Config, error) {
 	if err != nil {
 		return nil, fmt.Errorf("read: %w", err)
 	}
+
 	var root yaml.Node
+
 	if err := yaml.Unmarshal(data, &root); err != nil {
 		return nil, fmt.Errorf("yaml unmarshal: %w", err)
 	}
+
 	// root is a DocumentNode wrapping the real content.
 	if root.Kind != yaml.DocumentNode || len(root.Content) == 0 {
 		return &Config{}, nil
 	}
+
 	body := root.Content[0]
 	if body.Kind != yaml.MappingNode {
 		return nil, errAt(body, "top-level must be a mapping of directives (defaults/link/shell/clean/create)")
@@ -52,8 +60,10 @@ func Parse(r io.Reader) (*Config, error) {
 		if err != nil {
 			return nil, err
 		}
+
 		cfg.Directives = append(cfg.Directives, d)
 	}
+
 	return cfg, nil
 }
 
@@ -102,6 +112,7 @@ func parseDefaults(n *yaml.Node) (*Defaults, error) {
 	if n.Kind != yaml.MappingNode {
 		return nil, errAt(n, "defaults: must be a mapping")
 	}
+
 	d := &Defaults{}
 	for i := 0; i < len(n.Content); i += 2 {
 		k, v := n.Content[i], n.Content[i+1]
@@ -138,7 +149,9 @@ func parseLink(n *yaml.Node) (*Link, error) {
 	if n.Kind != yaml.MappingNode {
 		return nil, errAt(n, "link: must be a mapping of target→source")
 	}
+
 	l := &Link{Entries: make([]LinkEntry, 0, len(n.Content)/2)}
+
 	for i := 0; i < len(n.Content); i += 2 {
 		k, v := n.Content[i], n.Content[i+1]
 		e := LinkEntry{Target: k.Value}
@@ -157,6 +170,7 @@ func parseLink(n *yaml.Node) (*Link, error) {
 		}
 		l.Entries = append(l.Entries, e)
 	}
+
 	return l, nil
 }
 
@@ -165,6 +179,7 @@ func parseLinkOptions(n *yaml.Node) (LinkOptions, error) {
 	if n.Kind != yaml.MappingNode {
 		return o, errAt(n, "link options must be a mapping")
 	}
+
 	for i := 0; i < len(n.Content); i += 2 {
 		k, v := n.Content[i], n.Content[i+1]
 		switch k.Value {
@@ -232,7 +247,9 @@ func parseLinkOptions(n *yaml.Node) (LinkOptions, error) {
 			if v.Kind != yaml.SequenceNode {
 				return o, errAt(v, "link exclude must be a sequence")
 			}
+
 			o.Exclude = make([]string, 0, len(v.Content))
+
 			for _, item := range v.Content {
 				o.Exclude = append(o.Exclude, item.Value)
 			}
@@ -242,6 +259,7 @@ func parseLinkOptions(n *yaml.Node) (LinkOptions, error) {
 			return o, errAt(k, "link: unknown option %q", k.Value)
 		}
 	}
+
 	return o, nil
 }
 
@@ -249,14 +267,18 @@ func parseShell(n *yaml.Node) (*Shell, error) {
 	if n.Kind != yaml.SequenceNode {
 		return nil, errAt(n, "shell: must be a sequence")
 	}
+
 	s := &Shell{Entries: make([]ShellEntry, 0, len(n.Content))}
+
 	for _, item := range n.Content {
 		e, err := parseShellEntry(item)
 		if err != nil {
 			return nil, err
 		}
+
 		s.Entries = append(s.Entries, e)
 	}
+
 	return s, nil
 }
 
@@ -271,6 +293,7 @@ func parseShellEntry(n *yaml.Node) (ShellEntry, error) {
 	if n.Kind != yaml.MappingNode {
 		return e, errAt(n, "shell entry must be a mapping with 'name' and 'script'")
 	}
+
 	for i := 0; i < len(n.Content); i += 2 {
 		k, v := n.Content[i], n.Content[i+1]
 		switch k.Value {
@@ -311,9 +334,11 @@ func parseShellEntry(n *yaml.Node) (ShellEntry, error) {
 			return e, errAt(k, "shell: unknown key %q", k.Value)
 		}
 	}
+
 	if e.Command == "" {
 		return e, errAt(n, "shell: 'script' is required")
 	}
+
 	return e, nil
 }
 
@@ -322,6 +347,7 @@ func parseShellOptions(n *yaml.Node) (ShellOptions, error) {
 	if n.Kind != yaml.MappingNode {
 		return o, errAt(n, "shell options must be a mapping")
 	}
+
 	for i := 0; i < len(n.Content); i += 2 {
 		k, v := n.Content[i], n.Content[i+1]
 		switch k.Value {
@@ -353,6 +379,7 @@ func parseShellOptions(n *yaml.Node) (ShellOptions, error) {
 			return o, errAt(k, "shell defaults: unknown key %q", k.Value)
 		}
 	}
+
 	return o, nil
 }
 
@@ -382,6 +409,7 @@ func parseClean(n *yaml.Node) (*Clean, error) {
 	default:
 		return nil, errAt(n, "clean: must be a sequence or mapping")
 	}
+
 	return c, nil
 }
 
@@ -390,6 +418,7 @@ func parseCleanOptions(n *yaml.Node) (CleanOptions, error) {
 	if n.Kind != yaml.MappingNode {
 		return o, errAt(n, "clean options must be a mapping")
 	}
+
 	for i := 0; i < len(n.Content); i += 2 {
 		k, v := n.Content[i], n.Content[i+1]
 		switch k.Value {
@@ -409,6 +438,7 @@ func parseCleanOptions(n *yaml.Node) (CleanOptions, error) {
 			return o, errAt(k, "clean: unknown option %q", k.Value)
 		}
 	}
+
 	return o, nil
 }
 
@@ -443,6 +473,7 @@ func parseCreate(n *yaml.Node) (*Create, error) {
 	default:
 		return nil, errAt(n, "create: must be a sequence or mapping")
 	}
+
 	return c, nil
 }
 
@@ -456,6 +487,7 @@ func scalarBool(n *yaml.Node) (bool, error) {
 	case "false", "no", "off":
 		return false, nil
 	}
+
 	return false, errAt(n, "invalid boolean %q", n.Value)
 }
 
@@ -465,6 +497,7 @@ func scalarMode(n *yaml.Node) (uint32, error) {
 	if n.Kind != yaml.ScalarNode {
 		return 0, errAt(n, "expected file mode integer")
 	}
+
 	v := n.Value
 	base := 10
 	if len(v) > 1 && (v[0] == '0') && (v[1] == 'o' || v[1] == 'O') {
@@ -473,10 +506,12 @@ func scalarMode(n *yaml.Node) (uint32, error) {
 	} else if len(v) > 1 && v[0] == '0' {
 		base = 8
 	}
+
 	u, err := strconv.ParseUint(v, base, 32)
 	if err != nil {
 		return 0, errAt(n, "invalid mode %q: %v", n.Value, err)
 	}
+
 	return uint32(u), nil
 }
 

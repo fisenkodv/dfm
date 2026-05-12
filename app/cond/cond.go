@@ -50,15 +50,18 @@ func Eval(expr string, ctx Context) (bool, error) {
 	if expr == "" {
 		return true, nil
 	}
+
 	p := &parser{src: expr, ctx: ctx}
 	p.advance()
 	v, err := p.parseOr()
 	if err != nil {
 		return false, err
 	}
+
 	if p.tok.kind != tokEOF {
 		return false, fmt.Errorf("when: unexpected %q at position %d", p.tok.val, p.tok.pos)
 	}
+
 	return v, nil
 }
 
@@ -96,10 +99,12 @@ func (p *parser) advance() {
 	for p.pos < len(p.src) && unicode.IsSpace(rune(p.src[p.pos])) {
 		p.pos++
 	}
+
 	if p.pos >= len(p.src) {
 		p.tok = token{kind: tokEOF, pos: p.pos}
 		return
 	}
+
 	start := p.pos
 	c := p.src[p.pos]
 	switch {
@@ -167,6 +172,7 @@ func (p *parser) parseOr() (bool, error) {
 	if err != nil {
 		return false, err
 	}
+
 	for p.tok.kind == tokOr {
 		p.advance()
 		rhs, err := p.parseAnd()
@@ -175,6 +181,7 @@ func (p *parser) parseOr() (bool, error) {
 		}
 		v = v || rhs
 	}
+
 	return v, nil
 }
 
@@ -183,6 +190,7 @@ func (p *parser) parseAnd() (bool, error) {
 	if err != nil {
 		return false, err
 	}
+
 	for p.tok.kind == tokAnd {
 		p.advance()
 		rhs, err := p.parseUnary()
@@ -191,6 +199,7 @@ func (p *parser) parseAnd() (bool, error) {
 		}
 		v = v && rhs
 	}
+
 	return v, nil
 }
 
@@ -201,8 +210,10 @@ func (p *parser) parseUnary() (bool, error) {
 		if err != nil {
 			return false, err
 		}
+
 		return !v, nil
 	}
+
 	return p.parsePrimary()
 }
 
@@ -214,10 +225,13 @@ func (p *parser) parsePrimary() (bool, error) {
 		if err != nil {
 			return false, err
 		}
+
 		if p.tok.kind != tokRPar {
 			return false, fmt.Errorf("when: expected ')' at position %d", p.tok.pos)
 		}
+
 		p.advance()
+
 		return v, nil
 	case tokIdent:
 		name := p.tok.val
@@ -228,6 +242,7 @@ func (p *parser) parsePrimary() (bool, error) {
 			if p.tok.kind != tokString {
 				return false, fmt.Errorf("when: expected string after comparison, got %q", p.tok.val)
 			}
+
 			want := p.tok.val
 			p.advance()
 			got := p.resolve(name)
@@ -235,6 +250,7 @@ func (p *parser) parsePrimary() (bool, error) {
 			if op == tokNeq {
 				eq = !eq
 			}
+
 			return eq, nil
 		}
 		// Bare identifier — useful for future boolean flags. For now,
