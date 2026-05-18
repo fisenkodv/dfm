@@ -90,7 +90,8 @@ func run() int {
 }
 
 func setupLogger(verbose, quiet bool) {
-	logOpts := []lgr.Option{lgr.Format("{{.Message}}")}
+	logOpts := make([]lgr.Option, 0, 2)
+	logOpts = append(logOpts, lgr.Format("{{.Message}}"))
 
 	switch {
 	case verbose:

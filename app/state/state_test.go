@@ -24,6 +24,7 @@ func TestSaveLoad(t *testing.T) {
 	}
 	if got == nil {
 		t.Fatal("got nil state")
+		return
 	}
 	if len(got.LastApplied) != 2 || got.LastApplied[1] != "personal" {
 		t.Errorf("last_applied: %v", got.LastApplied)
