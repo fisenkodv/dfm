@@ -33,7 +33,7 @@ func TestWhen_SkipsUnmatchedDirectives(t *testing.T) {
 		},
 	}}
 
-	e := New(base, &recorder{})
+	e := New(base)
 	e.Cond = cond.Context{OS: "testos", Arch: "x", Hostname: "h"}
 	if _, err := e.Apply(context.Background(), cfg); err != nil {
 		t.Fatalf("apply: %v", err)

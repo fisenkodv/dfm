@@ -38,14 +38,14 @@ func TestApply_RealBaseProfile(t *testing.T) {
 	// `chsh` or `git submodule update` inside a unit test.
 	cfg.Directives = filterOut(cfg.Directives, config.KindShell, config.KindClean)
 
-	r := &recorder{}
-	e := New(repo, r)
+	buf := captureLog(t)
+	e := New(repo)
 	tally, err := e.Apply(context.Background(), cfg)
 	if err != nil {
 		t.Fatalf("apply: %v", err)
 	}
 	if tally.LinksCreated == 0 {
-		t.Fatalf("no links created. warns=%v", r.warns)
+		t.Fatalf("no links created. log=%s", buf.String())
 	}
 
 	// Verify every declared link: (target → repo/source) is a symlink with

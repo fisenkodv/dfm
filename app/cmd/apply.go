@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"fmt"
-	"os"
+	"log"
 	"path/filepath"
 	"time"
 
@@ -35,8 +35,7 @@ func (c *ApplyCmd) Execute(_ []string) error {
 		return fmt.Errorf("apply: %w", err)
 	}
 
-	r := &stdoutReporter{}
-	eng := engine.New(baseAbs, r)
+	eng := engine.New(baseAbs)
 	eng.DryRun = c.DryRun
 	totals := engine.Tally{}
 
@@ -47,9 +46,9 @@ func (c *ApplyCmd) Execute(_ []string) error {
 		}
 
 		if c.DryRun {
-			r.Info("would apply %s", p)
+			log.Printf("[INFO] would apply %s", p)
 		} else {
-			r.Info("applying %s", p)
+			log.Printf("[INFO] applying %s", p)
 		}
 
 		tally, err := eng.Apply(c.Context(), cfg)
@@ -65,7 +64,7 @@ func (c *ApplyCmd) Execute(_ []string) error {
 			AppliedAt:   time.Now().UTC(),
 			Links:       collectLinks(eng.Actions),
 		}); err != nil {
-			r.Warn("state save: %v", err)
+			log.Printf("[WARN] state save: %v", err)
 		}
 	}
 
@@ -74,7 +73,7 @@ func (c *ApplyCmd) Execute(_ []string) error {
 		prefix = "[dry-run] "
 	}
 
-	r.Info("%sdone: %d links ok, %d created, %d relinked, %d backed up, %d shell ran (%d failed), %d cleaned, %d dirs created",
+	log.Printf("[INFO] %sdone: %d links ok, %d created, %d relinked, %d backed up, %d shell ran (%d failed), %d cleaned, %d dirs created",
 		prefix, totals.LinksOK, totals.LinksCreated, totals.LinksRelinked, totals.LinksBackedUp,
 		totals.ShellRun, totals.ShellFailed, totals.Cleaned, totals.Created)
 
@@ -110,17 +109,3 @@ func add(a, b engine.Tally) engine.Tally {
 	}
 }
 
-// stdoutReporter prints engine messages to the console. Actions go to
-// stdout (they describe user-visible changes); warnings and info go to
-// stderr so they don't pollute scripted pipelines.
-type stdoutReporter struct{}
-
-func (stdoutReporter) Action(format string, args ...any) {
-	fmt.Fprintf(os.Stdout, "• "+format+"\n", args...)
-}
-func (stdoutReporter) Info(format string, args ...any) {
-	fmt.Fprintf(os.Stderr, "  "+format+"\n", args...)
-}
-func (stdoutReporter) Warn(format string, args ...any) {
-	fmt.Fprintf(os.Stderr, "! "+format+"\n", args...)
-}

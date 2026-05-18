@@ -8,24 +8,14 @@ package engine
 import (
 	"context"
 	"fmt"
-	"log/slog"
+	"log"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/bitcldr/dfm/app/cond"
 	"github.com/bitcldr/dfm/app/config"
 )
-
-// Reporter emits user-facing progress lines. main() wires this to stdout;
-// tests can supply a recorder.
-type Reporter interface {
-	// Action reports a mutation ("creating symlink X -> Y").
-	Action(format string, args ...any)
-	// Info reports a non-mutating observation ("link exists").
-	Info(format string, args ...any)
-	// Warn reports a recoverable problem.
-	Warn(format string, args ...any)
-}
 
 // Tally counts what happened across one Apply call. Fields are updated
 // directly by directive executors.
@@ -48,9 +38,8 @@ type Tally struct {
 // filesystem. In that mode, directive executors still inspect the FS to
 // decide what *would* happen but skip every mutation.
 type Engine struct {
-	BaseDir   string
-	Reporter  Reporter
-	DryRun    bool
+	BaseDir  string
+	DryRun   bool
 	Actions   []Action       // recorded in both real and dry-run modes
 	Defaults  mergedDefaults // accumulated across `defaults:` directives
 	Backup    backupWriter   // lazily created on first conflict
@@ -59,8 +48,8 @@ type Engine struct {
 }
 
 // New builds an Engine for a given base directory. BaseDir must be absolute.
-func New(baseDir string, r Reporter) *Engine {
-	return &Engine{BaseDir: baseDir, Reporter: r, Cond: cond.DefaultContext()}
+func New(baseDir string) *Engine {
+	return &Engine{BaseDir: baseDir, Cond: cond.DefaultContext()}
 }
 
 // record appends an Action. Pulled into one helper so callers don't repeat
@@ -81,13 +70,15 @@ func (e *Engine) Apply(ctx context.Context, cfg *config.Config) (Tally, error) {
 			return tally, err
 		}
 
+		log.Printf("[DEBUG] directive kind=%s line=%d", d.Kind, d.Line)
+
 		if d.When != "" {
 			ok, err := cond.Eval(d.When, e.Cond)
 			if err != nil {
 				return tally, fmt.Errorf("when (line %d): %w", d.Line, err)
 			}
+			log.Printf("[DEBUG] when=%q result=%v", d.When, ok)
 			if !ok {
-				slogDebug("skip directive", "kind", d.Kind, "when", d.When)
 				continue
 			}
 		}
@@ -258,7 +249,11 @@ func expandHome(path string) string {
 	if len(path) > 1 && path[1] != '/' {
 		// ~user/foo — rare; fall back to HOME of current user for safety.
 		home, _ := os.UserHomeDir()
-		return home + path[1:]
+		slash := strings.Index(path, "/")
+		if slash < 0 {
+			return home
+		}
+		return home + path[slash:]
 	}
 
 	home, err := os.UserHomeDir()
@@ -268,6 +263,3 @@ func expandHome(path string) string {
 
 	return home + path[1:]
 }
-
-// slogDebug is a shortcut so callers don't need to import slog directly.
-func slogDebug(msg string, args ...any) { slog.Debug(msg, args...) }

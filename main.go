@@ -9,11 +9,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log/slog"
+	"io"
 	"os"
 	"os/signal"
 	"syscall"
 
+	"github.com/fatih/color"
+	"github.com/go-pkgz/lgr"
 	"github.com/jessevdk/go-flags"
 
 	"github.com/bitcldr/dfm/app/cmd"
@@ -28,8 +30,8 @@ var revision = "dev"
 type Opts struct {
 	BaseDir    string `short:"C" long:"dir" description:"base directory for resolving profiles and sources" default:"."`
 	ConfigPath string `short:"c" long:"config" description:"explicit config path (overrides profile name lookup)"`
-	Debug      bool   `long:"dbg" description:"enable debug logging"`
-	Quiet      bool   `short:"q" long:"quiet" description:"suppress non-error output"`
+	Verbose    bool   `long:"verbose" description:"enable verbose (debug) logging"`
+	Quiet      bool   `short:"q" long:"quiet" description:"suppress info output (warnings and errors still shown)"`
 
 	Apply      cmd.ApplyCmd      `command:"apply" description:"apply one or more profiles"`
 	Diff       cmd.DiffCmd       `command:"diff" description:"show planned changes without writing"`
@@ -54,7 +56,10 @@ func run() int {
 
 	// Inject shared config into every subcommand before Execute runs.
 	parser.CommandHandler = func(command flags.Commander, args []string) error {
-		setupLogger(opts.Debug, opts.Quiet)
+		if opts.Verbose && opts.Quiet {
+			return fmt.Errorf("--verbose and --quiet are mutually exclusive")
+		}
+		setupLogger(opts.Verbose, opts.Quiet)
 
 		if c, ok := command.(cmd.ContextSetter); ok {
 			c.SetContext(ctx)
@@ -84,16 +89,27 @@ func run() int {
 	return 0
 }
 
-func setupLogger(debug, quiet bool) {
-	level := slog.LevelInfo
+func setupLogger(verbose, quiet bool) {
+	logOpts := make([]lgr.Option, 0, 2)
+	logOpts = append(logOpts, lgr.Format("{{.Message}}"))
 
 	switch {
-	case debug:
-		level = slog.LevelDebug
+	case verbose:
+		logOpts = []lgr.Option{lgr.Debug, lgr.Msec, lgr.LevelBraces, lgr.StackTraceOnError}
 	case quiet:
-		level = slog.LevelWarn
+		logOpts = []lgr.Option{lgr.Out(io.Discard), lgr.Err(io.Discard)}
 	}
 
-	h := slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: level})
-	slog.SetDefault(slog.New(h))
+	colorizer := lgr.Mapper{
+		ErrorFunc:  func(s string) string { return color.New(color.FgHiRed).Sprint(s) },
+		WarnFunc:   func(s string) string { return color.New(color.FgRed).Sprint(s) },
+		InfoFunc:   func(s string) string { return color.New(color.FgYellow).Sprint(s) },
+		DebugFunc:  func(s string) string { return color.New(color.FgWhite).Sprint(s) },
+		CallerFunc: func(s string) string { return color.New(color.FgBlue).Sprint(s) },
+		TimeFunc:   func(s string) string { return color.New(color.FgCyan).Sprint(s) },
+	}
+
+	logOpts = append(logOpts, lgr.Map(colorizer))
+	lgr.SetupStdLogger(logOpts...)
+	lgr.Setup(logOpts...)
 }

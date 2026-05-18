@@ -26,7 +26,7 @@ func (c *DoctorCmd) Execute(_ []string) error {
 	}
 
 	if s == nil {
-		fmt.Println("no applied state found — run `dfm apply` first")
+		fmt.Fprintln(os.Stderr, "! no applied state found — run `dfm apply` first")
 		return nil
 	}
 
@@ -53,9 +53,14 @@ func (c *DoctorCmd) Execute(_ []string) error {
 		ok++
 	}
 
-	fmt.Printf("checked %d link(s): %d ok, %d problem(s)\n", len(s.Links), ok, len(problems))
+	summary := fmt.Sprintf("checked %d link(s): %d ok, %d problem(s)", len(s.Links), ok, len(problems))
+	if len(problems) > 0 {
+		fmt.Fprintf(os.Stderr, "! %s\n", summary)
+	} else {
+		fmt.Fprintf(os.Stderr, "  %s\n", summary)
+	}
 	for _, p := range problems {
-		fmt.Printf("  ! %s\n", p)
+		fmt.Fprintf(os.Stderr, "! %s\n", p)
 	}
 
 	if len(problems) > 0 {
