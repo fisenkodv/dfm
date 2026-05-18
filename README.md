@@ -32,13 +32,16 @@ Profiles are read from `./profiles/<name>.conf.yaml` relative to the base dir (`
 | Command                  | Purpose                                  |
 | ------------------------ | ---------------------------------------- |
 | `dfm apply <profile>...` | Apply one or more profiles in order      |
+| `dfm apply --dry-run`    | Report planned changes without writing   |
 | `dfm diff <profile>`     | Show planned changes, no writes          |
 | `dfm doctor`             | Verify installed symlinks still resolve  |
 | `dfm status`             | Show last applied profiles and timestamp |
 | `dfm list`               | List profiles found in `./profiles/`     |
 | `dfm completion <shell>` | Output shell completion script           |
 
-Global flags: `-C <dir>`, `-c <path>`, `--dry-run`, `--dbg`.
+Global flags: `-C <dir>`, `-c <path>`, `--verbose` (debug logging: directive tracing, symlink resolution, shell commands), `-q`/`--quiet`.
+
+Action lines are written to stdout (no prefix). Info and warning messages go to stderr with level prefixes (`INFO`, `WARN`). Use `--quiet` to suppress info messages or `--verbose` for debug output.
 
 ## Shell completion
 

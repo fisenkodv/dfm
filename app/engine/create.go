@@ -4,6 +4,8 @@ import (
 	"errors"
 	"os"
 
+	"log"
+
 	"github.com/bitcldr/dfm/app/config"
 )
 
@@ -18,27 +20,29 @@ func (e *Engine) runCreate(c *config.Create, tally *Tally) error {
 		}
 
 		if _, err := os.Stat(path); err == nil {
-			e.Reporter.Info("path exists %s", path)
+			log.Printf("[DEBUG] create stat path=%s exists=true", path)
+			log.Printf("[INFO] path exists %s", path)
 			e.record(ActionCreateExists, path, "")
 			continue
 		} else if !errors.Is(err, os.ErrNotExist) {
-			e.Reporter.Warn("stat %s: %v", path, err)
+			log.Printf("[WARN] stat %s: %v", path, err)
 			continue
 		}
 
 		if !e.DryRun {
 			if err := os.MkdirAll(path, mode); err != nil {
-				e.Reporter.Warn("create %s: %v", path, err)
+				log.Printf("[WARN] create %s: %v", path, err)
 				continue
 			}
 
 			if err := os.Chmod(path, mode); err != nil {
-				// Non-fatal; best-effort chmod after mkdir.
-				slogDebug("chmod after create", "path", path, "err", err)
+				log.Printf("[DEBUG] chmod failed path=%s err=%v", path, err)
+			} else {
+				log.Printf("[DEBUG] chmod path=%s mode=%04o", path, mode)
 			}
 		}
 
-		e.Reporter.Action("created %s", path)
+		log.Printf("[INFO] created %s", path)
 		e.record(ActionCreateDir, path, "")
 		tally.Created++
 	}

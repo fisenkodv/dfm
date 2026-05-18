@@ -2,6 +2,7 @@ package engine
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"time"
@@ -58,7 +59,7 @@ func (e *Engine) ensureBackup(src string, isDir bool) error {
 		}
 	}
 
-	e.Reporter.Action("backed up %s -> %s", src, dst)
+	log.Printf("[INFO] backed up %s -> %s", src, dst)
 	e.record(ActionLinkBackup, src, dst)
 	_ = isDir // reserved for future split behavior (e.g. archive dirs)
 

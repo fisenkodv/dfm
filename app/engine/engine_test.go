@@ -1,8 +1,9 @@
 package engine
 
 import (
+	"bytes"
 	"context"
-	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -11,23 +12,15 @@ import (
 	"github.com/bitcldr/dfm/app/config"
 )
 
-// recorder is a Reporter that captures messages for assertions.
-type recorder struct {
-	actions []string
-	infos   []string
-	warns   []string
-}
-
-func (r *recorder) Action(format string, args ...any) {
-	r.actions = append(r.actions, fmt.Sprintf(format, args...))
-}
-
-func (r *recorder) Info(format string, args ...any) {
-	r.infos = append(r.infos, fmt.Sprintf(format, args...))
-}
-
-func (r *recorder) Warn(format string, args ...any) {
-	r.warns = append(r.warns, fmt.Sprintf(format, args...))
+// captureLog redirects the standard logger to a buffer for the duration of
+// the test. Returns the buffer so callers can assert on [WARN]/[INFO] lines.
+func captureLog(t *testing.T) *bytes.Buffer {
+	t.Helper()
+	buf := &bytes.Buffer{}
+	old := log.Writer()
+	log.SetOutput(buf)
+	t.Cleanup(func() { log.SetOutput(old) })
+	return buf
 }
 
 // sandbox creates a fake dotfiles repo + home directory under t.TempDir().
@@ -89,15 +82,15 @@ func TestLink_CreatesFreshSymlink(t *testing.T) {
 			}},
 		},
 	}}
-	r := &recorder{}
-	e := New(base, r)
+	buf := captureLog(t)
+	e := New(base)
 	tally, err := e.Apply(context.Background(), cfg)
 	if err != nil {
 		t.Fatalf("apply: %v", err)
 	}
 
 	if tally.LinksCreated != 1 {
-		t.Errorf("LinksCreated = %d, want 1; warns=%v", tally.LinksCreated, r.warns)
+		t.Errorf("LinksCreated = %d, want 1; log=%s", tally.LinksCreated, buf.String())
 	}
 
 	got := readLink(t, filepath.Join(home, ".config", "nvim"))
@@ -117,20 +110,20 @@ func TestLink_IdempotentWhenAlreadyCorrect(t *testing.T) {
 			{Target: "~/.config/nvim", Options: linkPath("config/nvim")},
 		}},
 	}}}
-	e := New(base, &recorder{})
+	e := New(base)
 	if _, err := e.Apply(context.Background(), cfg); err != nil {
 		t.Fatal(err)
 	}
 
-	r := &recorder{}
-	e2 := New(base, r)
+	buf := captureLog(t)
+	e2 := New(base)
 	tally, err := e2.Apply(context.Background(), cfg)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	if tally.LinksOK != 1 || tally.LinksCreated != 0 {
-		t.Errorf("second apply: tally=%+v warns=%v", tally, r.warns)
+		t.Errorf("second apply: tally=%+v log=%s", tally, buf.String())
 	}
 
 	// Target still correct.
@@ -160,15 +153,15 @@ func TestLink_RelinksStaleSymlinkWhenRelinkTrue(t *testing.T) {
 			{Target: "~/.config/app", Options: opts},
 		}},
 	}}}
-	r := &recorder{}
-	e := New(base, r)
+	buf := captureLog(t)
+	e := New(base)
 	tally, err := e.Apply(context.Background(), cfg)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	if tally.LinksRelinked != 1 {
-		t.Errorf("LinksRelinked = %d, want 1. warns=%v", tally.LinksRelinked, r.warns)
+		t.Errorf("LinksRelinked = %d, want 1. log=%s", tally.LinksRelinked, buf.String())
 	}
 
 	if readLink(t, linkAt) != good {
@@ -192,14 +185,14 @@ func TestLink_RefusesStaleWithoutRelink(t *testing.T) {
 			{Target: "~/.config/app", Options: linkPath("config/good")},
 		}},
 	}}}
-	r := &recorder{}
-	e := New(base, r)
+	buf := captureLog(t)
+	e := New(base)
 	if _, err := e.Apply(context.Background(), cfg); err != nil {
 		t.Fatal(err)
 	}
 
-	if len(r.warns) == 0 {
-		t.Errorf("expected a warning about stale link; warns=%v", r.warns)
+	if !strings.Contains(buf.String(), "[WARN]") {
+		t.Errorf("expected a warning about stale link; log=%s", buf.String())
 	}
 
 	if readLink(t, linkAt) != "/some/other/place" {
@@ -220,15 +213,15 @@ func TestLink_BacksUpExistingRegularFile(t *testing.T) {
 			{Target: "~/.zshrc", Options: linkPath("config/zshrc.zsh")},
 		}},
 	}}}
-	r := &recorder{}
-	e := New(base, r)
+	buf := captureLog(t)
+	e := New(base)
 	tally, err := e.Apply(context.Background(), cfg)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	if tally.LinksBackedUp != 1 || tally.LinksCreated != 1 {
-		t.Errorf("tally=%+v warns=%v", tally, r.warns)
+		t.Errorf("tally=%+v log=%s", tally, buf.String())
 	}
 
 	// Now linked to repo file.
@@ -267,7 +260,7 @@ func TestShell_RunsCommandInBaseDir(t *testing.T) {
 			{Command: "echo ok > marker", Description: "write marker"},
 		}},
 	}}}
-	e := New(base, &recorder{})
+	e := New(base)
 	tally, err := e.Apply(context.Background(), cfg)
 	if err != nil {
 		t.Fatal(err)
@@ -296,15 +289,18 @@ func TestShell_FailedCommandIsReported(t *testing.T) {
 			{Command: "true"},
 		}},
 	}}}
-	r := &recorder{}
-	e := New(base, r)
+	buf := captureLog(t)
+	e := New(base)
 	tally, err := e.Apply(context.Background(), cfg)
 	if err != nil {
 		t.Fatalf("apply returned fatal error: %v", err)
 	}
 
-	if tally.ShellFailed != 1 || tally.ShellRun != 1 {
-		t.Errorf("tally=%+v warns=%v", tally, r.warns)
+	if tally.ShellFailed != 1 || tally.ShellRun != 2 {
+		t.Errorf("tally=%+v log=%s", tally, buf.String())
+	}
+	if !strings.Contains(buf.String(), "[WARN]") {
+		t.Error("expected warning for failed command, got none")
 	}
 }
 
@@ -324,15 +320,15 @@ func TestClean_RemovesDeadLinkIntoBase(t *testing.T) {
 		Kind:  config.KindClean,
 		Clean: &config.Clean{Entries: []config.CleanEntry{{Target: "~"}}},
 	}}}
-	r := &recorder{}
-	e := New(base, r)
+	buf := captureLog(t)
+	e := New(base)
 	tally, err := e.Apply(context.Background(), cfg)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	if tally.Cleaned != 1 {
-		t.Errorf("Cleaned=%d, want 1 (only the in-base dangler); warns=%v", tally.Cleaned, r.warns)
+		t.Errorf("Cleaned=%d, want 1 (only the in-base dangler); log=%s", tally.Cleaned, buf.String())
 	}
 
 	if _, err := os.Lstat(filepath.Join(home, "dangling")); !os.IsNotExist(err) {
@@ -351,7 +347,7 @@ func TestCreate_MakesDirectory(t *testing.T) {
 		Kind:   config.KindCreate,
 		Create: &config.Create{Entries: []config.CreateEntry{{Path: "~/secrets", Mode: &mode}}},
 	}}}
-	e := New(home, &recorder{})
+	e := New(home)
 	tally, err := e.Apply(context.Background(), cfg)
 	if err != nil {
 		t.Fatal(err)
@@ -397,7 +393,7 @@ func TestDefaults_AppliedToLaterDirectives(t *testing.T) {
 			}},
 		},
 	}}
-	e := New(base, &recorder{})
+	e := New(base)
 	tally, err := e.Apply(context.Background(), cfg)
 	if err != nil {
 		t.Fatal(err)

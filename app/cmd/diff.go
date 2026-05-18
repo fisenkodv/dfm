@@ -32,8 +32,7 @@ func (c *DiffCmd) Execute(_ []string) error {
 		return err
 	}
 
-	r := quietReporter{}
-	eng := engine.New(baseAbs, r)
+	eng := engine.New(baseAbs)
 	eng.DryRun = true
 
 	for _, p := range paths {
@@ -50,14 +49,6 @@ func (c *DiffCmd) Execute(_ []string) error {
 	printDiff(os.Stdout, eng.Actions)
 	return nil
 }
-
-// quietReporter discards engine chatter during diff — we render from the
-// structured Actions list instead so output is stable and scriptable.
-type quietReporter struct{}
-
-func (quietReporter) Action(string, ...any) {}
-func (quietReporter) Info(string, ...any)   {}
-func (quietReporter) Warn(string, ...any)   {}
 
 // printDiff groups actions by kind and prints each group with a header. A
 // legend shows what prefixes mean. Empty groups are omitted.

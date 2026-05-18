@@ -5,6 +5,8 @@ import (
 	"os"
 	"os/exec"
 
+	"log"
+
 	"github.com/bitcldr/dfm/app/config"
 )
 
@@ -16,15 +18,16 @@ func (e *Engine) runShell(ctx context.Context, s *config.Shell, tally *Tally) er
 		opts := mergeShellOpts(e.Defaults.Shell, item.Options)
 		quiet := boolOr(opts.Quiet, false)
 		if quiet && item.Description != "" {
-			e.Reporter.Info("%s", item.Description)
+			log.Printf("[INFO] %s", item.Description)
 		} else if !quiet {
 			if item.Description != "" {
-				e.Reporter.Action("%s [%s]", item.Description, item.Command)
+				log.Printf("[INFO] %s [%s]", item.Description, item.Command)
 			} else {
-				e.Reporter.Action("%s", item.Command)
+				log.Printf("[INFO] %s", item.Command)
 			}
 		}
 
+		log.Printf("[DEBUG] shell cmd=%q dir=%s dry_run=%v", item.Command, e.BaseDir, e.DryRun)
 		e.record(ActionShellRun, item.Command, item.Description)
 		if e.DryRun {
 			continue
@@ -41,12 +44,11 @@ func (e *Engine) runShell(ctx context.Context, s *config.Shell, tally *Tally) er
 		if !quiet && boolOr(opts.Stderr, false) {
 			cmd.Stderr = os.Stderr
 		}
+		tally.ShellRun++
 		if err := cmd.Run(); err != nil {
 			tally.ShellFailed++
-			e.Reporter.Warn("command failed [%s]: %v", item.Command, err)
-			continue
+			log.Printf("[WARN] command failed [%s]: %v", item.Command, err)
 		}
-		tally.ShellRun++
 	}
 	return nil
 }

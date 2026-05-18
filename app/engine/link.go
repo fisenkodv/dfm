@@ -3,6 +3,7 @@ package engine
 import (
 	"errors"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 
@@ -13,8 +14,7 @@ import (
 func (e *Engine) runLink(l *config.Link, tally *Tally) error {
 	for _, entry := range l.Entries {
 		if err := e.linkOne(entry, tally); err != nil {
-			// Log and continue on recoverable link errors.
-			e.Reporter.Warn("link %s: %v", entry.Target, err)
+			log.Printf("[WARN] link %s: %v", entry.Target, err)
 		}
 	}
 	return nil
@@ -35,6 +35,7 @@ func (e *Engine) linkOne(entry config.LinkEntry, tally *Tally) error {
 	if err != nil {
 		return fmt.Errorf("abs: %w", err)
 	}
+	log.Printf("[DEBUG] link target=%s source=%s", linkPath, sourceAbs)
 
 	if boolOr(opts.Glob, false) && hasGlobChars(source) {
 		return fmt.Errorf("glob: not yet supported in v1")
@@ -90,8 +91,9 @@ func (e *Engine) linkOne(entry config.LinkEntry, tally *Tally) error {
 		if err != nil {
 			return fmt.Errorf("readlink: %w", err)
 		}
+		log.Printf("[DEBUG] existing symlink=%s current=%s desired=%s", linkPath, current, desired)
 		if current == desired {
-			e.Reporter.Info("link ok %s -> %s", entry.Target, desired)
+			log.Printf("[INFO] link ok %s -> %s", entry.Target, desired)
 			e.record(ActionLinkExists, linkPath, desired)
 			tally.LinksOK++
 			return nil
@@ -100,7 +102,7 @@ func (e *Engine) linkOne(entry config.LinkEntry, tally *Tally) error {
 			if err := e.performRelink(linkPath, desired); err != nil {
 				return err
 			}
-			e.Reporter.Action("relinked %s -> %s", linkPath, desired)
+			log.Printf("[INFO] relinked %s -> %s", linkPath, desired)
 			e.record(ActionLinkRelink, linkPath, desired)
 			tally.LinksRelinked++
 			return nil
@@ -112,6 +114,7 @@ func (e *Engine) linkOne(entry config.LinkEntry, tally *Tally) error {
 	case kindRegular, kindDir:
 		// Non-symlink exists at target: back up then replace.
 		// Backups are reversible, making apply idempotent.
+		log.Printf("[DEBUG] backup decision: backing up %s (dir=%v)", linkPath, existing.IsDir())
 		if err := e.ensureBackup(linkPath, existing.IsDir()); err != nil {
 			return fmt.Errorf("backup: %w", err)
 		}
@@ -143,7 +146,7 @@ func (e *Engine) createSymlink(linkPath, target string, tally *Tally) error {
 			return err
 		}
 	}
-	e.Reporter.Action("linked %s -> %s", linkPath, target)
+	log.Printf("[INFO] linked %s -> %s", linkPath, target)
 	e.record(ActionLinkCreate, linkPath, target)
 	tally.LinksCreated++
 	return nil

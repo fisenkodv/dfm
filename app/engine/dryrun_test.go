@@ -31,7 +31,7 @@ func TestDryRun_RecordsWithoutMutating(t *testing.T) {
 		},
 	}}
 
-	e := New(base, &recorder{})
+	e := New(base)
 	e.DryRun = true
 	if _, err := e.Apply(context.Background(), cfg); err != nil {
 		t.Fatalf("apply: %v", err)

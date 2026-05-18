@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"log"
+
 	"github.com/bitcldr/dfm/app/config"
 )
 
@@ -40,7 +42,7 @@ func (e *Engine) runClean(c *config.Clean, tally *Tally) error {
 		target := expand(entry.Target)
 
 		if err := e.cleanDir(target, baseCandidates, boolOr(opts.Force, false), boolOr(opts.Recursive, false), tally); err != nil {
-			e.Reporter.Warn("clean %s: %v", entry.Target, err)
+			log.Printf("[WARN] clean %s: %v", entry.Target, err)
 		}
 	}
 
@@ -69,7 +71,9 @@ func (e *Engine) cleanDir(dir string, baseCandidates []string, force, recursive 
 		}
 
 		if recursive && info.IsDir() {
-			_ = e.cleanDir(path, baseCandidates, force, recursive, tally)
+			if err := e.cleanDir(path, baseCandidates, force, recursive, tally); err != nil {
+				log.Printf("[WARN] clean %s: %v", path, err)
+			}
 			continue
 		}
 
@@ -79,7 +83,8 @@ func (e *Engine) cleanDir(dir string, baseCandidates []string, force, recursive 
 
 		// Symlink — check if it's broken (target doesn't exist).
 		if _, err := os.Stat(path); err == nil {
-			continue // link still resolves
+			log.Printf("[DEBUG] clean skip %s: still resolves", path)
+			continue
 		}
 
 		points, err := os.Readlink(path)
@@ -92,17 +97,19 @@ func (e *Engine) cleanDir(dir string, baseCandidates []string, force, recursive 
 		}
 
 		if !force && !isInsideAny(points, baseCandidates) {
+			log.Printf("[DEBUG] clean skip %s: points outside base dir (points=%s)", path, points)
 			continue // links outside base dir are left alone
 		}
+		log.Printf("[DEBUG] clean remove %s -> %s force=%v", path, points, force)
 
 		if !e.DryRun {
 			if err := os.Remove(path); err != nil {
-				e.Reporter.Warn("remove %s: %v", path, err)
+				log.Printf("[WARN] remove %s: %v", path, err)
 				continue
 			}
 		}
 
-		e.Reporter.Action("removed dead link %s -> %s", path, points)
+		log.Printf("[INFO] removed dead link %s -> %s", path, points)
 		e.record(ActionCleanRemove, path, points)
 		tally.Cleaned++
 	}

@@ -65,7 +65,7 @@ _dfm() {
     _arguments \
         '(-C --dir)'{-C,--dir}'[base directory]:dir:_files -/' \
         '(-c --config)'{-c,--config}'[config path]:file:_files' \
-        '--dbg[enable debug logging]' \
+        '--verbose[enable verbose (debug) logging]' \
         '(-q --quiet)'{-q,--quiet}'[suppress non-error output]' \
         '1: :->subcommand' \
         '*: :->args'
@@ -111,7 +111,7 @@ complete -c dfm -f
 # Global flags
 complete -c dfm -s C -l dir     -r -d 'Base directory'      -F
 complete -c dfm -s c -l config  -r -d 'Config path'         -F
-complete -c dfm      -l dbg        -d 'Enable debug logging'
+complete -c dfm      -l verbose     -d 'Enable verbose (debug) logging'
 complete -c dfm -s q -l quiet      -d 'Suppress non-error output'
 
 # Subcommands
