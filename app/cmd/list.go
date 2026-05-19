@@ -39,10 +39,6 @@ func (c *ListCmd) Execute(_ []string) error {
 	}
 
 	sort.Strings(names)
-
-	for _, n := range names {
-		fmt.Println(n)
-	}
-
+	c.IO().ProfileList(names)
 	return nil
 }

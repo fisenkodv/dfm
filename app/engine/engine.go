@@ -15,6 +15,7 @@ import (
 
 	"github.com/bitcldr/dfm/app/cond"
 	"github.com/bitcldr/dfm/app/config"
+	"github.com/bitcldr/dfm/app/iostreams"
 )
 
 // Tally counts what happened across one Apply call. Fields are updated
@@ -38,13 +39,22 @@ type Tally struct {
 // filesystem. In that mode, directive executors still inspect the FS to
 // decide what *would* happen but skip every mutation.
 type Engine struct {
-	BaseDir  string
-	DryRun   bool
-	Actions   []Action       // recorded in both real and dry-run modes
-	Defaults  mergedDefaults // accumulated across `defaults:` directives
-	Backup    backupWriter   // lazily created on first conflict
-	backupTag string         // shared timestamp tag for all backups in this Apply
-	Cond      cond.Context   // set by New; overridable for tests
+	BaseDir   string
+	DryRun    bool
+	IO        *iostreams.IOStreams // nil → output is discarded (e.g. in tests)
+	Actions   []Action            // recorded in both real and dry-run modes
+	Defaults  mergedDefaults      // accumulated across `defaults:` directives
+	Backup    backupWriter        // lazily created on first conflict
+	backupTag string              // shared timestamp tag for all backups in this Apply
+	Cond      cond.Context        // set by New; overridable for tests
+}
+
+// io returns the engine's IOStreams, falling back to discard if none was set.
+func (e *Engine) io() *iostreams.IOStreams {
+	if e.IO == nil {
+		return iostreams.Discard()
+	}
+	return e.IO
 }
 
 // New builds an Engine for a given base directory. BaseDir must be absolute.

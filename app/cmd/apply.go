@@ -8,6 +8,7 @@ import (
 
 	"github.com/bitcldr/dfm/app/config"
 	"github.com/bitcldr/dfm/app/engine"
+	"github.com/bitcldr/dfm/app/iostreams"
 	"github.com/bitcldr/dfm/app/state"
 )
 
@@ -37,6 +38,7 @@ func (c *ApplyCmd) Execute(_ []string) error {
 
 	eng := engine.New(baseAbs)
 	eng.DryRun = c.DryRun
+	eng.IO = c.IO()
 	totals := engine.Tally{}
 
 	for _, p := range paths {
@@ -46,9 +48,9 @@ func (c *ApplyCmd) Execute(_ []string) error {
 		}
 
 		if c.DryRun {
-			log.Printf("[INFO] would apply %s", p)
+			c.IO().WouldApply(p)
 		} else {
-			log.Printf("[INFO] applying %s", p)
+			c.IO().Applying(p)
 		}
 
 		tally, err := eng.Apply(c.Context(), cfg)
@@ -68,14 +70,16 @@ func (c *ApplyCmd) Execute(_ []string) error {
 		}
 	}
 
-	prefix := ""
-	if c.DryRun {
-		prefix = "[dry-run] "
-	}
-
-	log.Printf("[INFO] %sdone: %d links ok, %d created, %d relinked, %d backed up, %d shell ran (%d failed), %d cleaned, %d dirs created",
-		prefix, totals.LinksOK, totals.LinksCreated, totals.LinksRelinked, totals.LinksBackedUp,
-		totals.ShellRun, totals.ShellFailed, totals.Cleaned, totals.Created)
+	c.IO().Done(c.DryRun, iostreams.ApplyResult{
+		LinksOK:     totals.LinksOK,
+		Created:     totals.LinksCreated,
+		Relinked:    totals.LinksRelinked,
+		BackedUp:    totals.LinksBackedUp,
+		ShellRun:    totals.ShellRun,
+		ShellFailed: totals.ShellFailed,
+		Cleaned:     totals.Cleaned,
+		Dirs:        totals.Created,
+	})
 
 	return nil
 }

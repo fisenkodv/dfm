@@ -16,21 +16,27 @@ type StatusCmd struct {
 
 // Execute is the go-flags entry point for `dfm status`.
 func (c *StatusCmd) Execute(_ []string) error {
+	ios := c.IO()
+
 	s, err := state.Load()
 	if err != nil {
 		return err
 	}
 
 	if s == nil {
-		fmt.Println("no profiles have been applied on this machine yet")
+		ios.StatusEmpty("no profiles have been applied on this machine yet")
 		return nil
 	}
 
 	p, _ := state.Path()
-	fmt.Printf("state file:   %s\n", p)
-	fmt.Printf("last applied: %s\n", strings.Join(s.LastApplied, " "))
-	fmt.Printf("applied at:   %s (%s ago)\n", s.AppliedAt.Local().Format(time.RFC3339), humanSince(s.AppliedAt))
-	fmt.Printf("links:        %d\n", len(s.Links))
+	ios.StatusLine("State file:  ", p)
+	ios.StatusLine("Last applied:", strings.Join(s.LastApplied, " "))
+	ios.StatusLineWithMeta(
+		"Applied at:  ",
+		s.AppliedAt.Local().Format(time.RFC3339),
+		"("+humanSince(s.AppliedAt)+" ago)",
+	)
+	ios.StatusLine("Links:       ", fmt.Sprintf("%d", len(s.Links)))
 
 	return nil
 }

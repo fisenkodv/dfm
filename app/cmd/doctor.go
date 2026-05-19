@@ -20,13 +20,15 @@ type DoctorCmd struct {
 // symlink, or pointing at the wrong source. A clean run prints a summary
 // and returns nil. This makes `dfm doctor` scriptable in CI.
 func (c *DoctorCmd) Execute(_ []string) error {
+	ios := c.IO()
+
 	s, err := state.Load()
 	if err != nil {
 		return err
 	}
 
 	if s == nil {
-		fmt.Fprintln(os.Stderr, "! no applied state found — run `dfm apply` first")
+		ios.DoctorFail("no applied state found — run `dfm apply` first")
 		return nil
 	}
 
@@ -46,26 +48,19 @@ func (c *DoctorCmd) Execute(_ []string) error {
 		}
 
 		if dest != l.Source {
-			problems = append(problems, fmt.Sprintf("drifted: %s -> %s (want %s)", l.Target, dest, l.Source))
+			problems = append(problems, fmt.Sprintf("drifted: %s → %s (want %s)", l.Target, dest, l.Source))
 			continue
 		}
 
 		ok++
 	}
 
-	summary := fmt.Sprintf("checked %d link(s): %d ok, %d problem(s)", len(s.Links), ok, len(problems))
-	if len(problems) > 0 {
-		fmt.Fprintf(os.Stderr, "! %s\n", summary)
-	} else {
-		fmt.Fprintf(os.Stderr, "  %s\n", summary)
-	}
+	ios.DoctorDone(ok, len(problems))
 	for _, p := range problems {
-		fmt.Fprintf(os.Stderr, "! %s\n", p)
+		ios.DoctorItem(p)
 	}
-
 	if len(problems) > 0 {
 		return fmt.Errorf("%d link(s) need attention", len(problems))
 	}
-
 	return nil
 }

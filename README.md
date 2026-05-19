@@ -39,9 +39,9 @@ Profiles are read from `./profiles/<name>.conf.yaml` relative to the base dir (`
 | `dfm list`               | List profiles found in `./profiles/`     |
 | `dfm completion <shell>` | Output shell completion script           |
 
-Global flags: `-C <dir>`, `-c <path>`, `--verbose` (debug logging: directive tracing, symlink resolution, shell commands), `-q`/`--quiet`.
+Global flags: `-C <dir>`, `-c <path>`, `--verbose` (debug tracing), `-q`/`--quiet` (suppress progress; warnings always visible), `--color=auto|always|never` (default: `auto`; also respects `NO_COLOR` env var and `CLICOLOR_FORCE=1`).
 
-Action lines are written to stdout (no prefix). Info and warning messages go to stderr with level prefixes (`INFO`, `WARN`). Use `--quiet` to suppress info messages or `--verbose` for debug output.
+Progress output (links created, shell commands, apply summary) goes to **stderr**. Data output (profile list, completion scripts, `dfm status`) goes to **stdout** and is safe to pipe. Warnings always appear on stderr regardless of `--quiet`. Use `--quiet` to suppress progress output, `--verbose` for debug tracing.
 
 ## Shell completion
 

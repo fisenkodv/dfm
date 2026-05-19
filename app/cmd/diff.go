@@ -8,6 +8,7 @@ import (
 
 	"github.com/bitcldr/dfm/app/config"
 	"github.com/bitcldr/dfm/app/engine"
+	"github.com/bitcldr/dfm/app/iostreams"
 )
 
 // DiffCmd shows the set of filesystem changes that would result from
@@ -46,13 +47,12 @@ func (c *DiffCmd) Execute(_ []string) error {
 		}
 	}
 
-	printDiff(os.Stdout, eng.Actions)
+	printDiff(c.IO(), eng.Actions)
 	return nil
 }
 
-// printDiff groups actions by kind and prints each group with a header. A
-// legend shows what prefixes mean. Empty groups are omitted.
-func printDiff(w *os.File, actions []engine.Action) {
+// printDiff groups actions by kind and prints each group with a header.
+func printDiff(ios *iostreams.IOStreams, actions []engine.Action) {
 	groups := map[engine.ActionKind][]engine.Action{}
 	order := []engine.ActionKind{
 		engine.ActionLinkCreate,
@@ -78,41 +78,41 @@ func printDiff(w *os.File, actions []engine.Action) {
 		}
 
 		empty = false
-		fmt.Fprintf(w, "%s (%d)\n", headerFor(k), len(list))
+		ios.DiffHeader(headerFor(k), len(list))
 
 		for _, a := range list {
-			fmt.Fprintf(w, "  %s\n", formatAction(a))
+			ios.DiffAction(formatAction(a))
 		}
 	}
 
 	if empty {
-		fmt.Fprintln(w, "no changes")
+		ios.DiffEmpty()
 	}
 }
 
 func headerFor(k engine.ActionKind) string {
 	switch k {
 	case engine.ActionLinkCreate:
-		return "+ links to create"
+		return "+ Links to create"
 	case engine.ActionLinkRelink:
-		return "~ links to relink"
+		return "~ Links to relink"
 	case engine.ActionLinkBackup:
-		return "! non-symlink targets to back up"
+		return "! Mon-symlink targets to back up"
 	case engine.ActionLinkSkip:
-		return "? links blocked by conflict (need relink/force)"
+		return "? Links blocked by conflict (need relink/force)"
 	case engine.ActionLinkExists:
-		return "= links already correct"
+		return "= Links already correct"
 	case engine.ActionCreateDir:
-		return "+ directories to create"
+		return "+ Directories to create"
 	case engine.ActionCreateExists:
-		return "= directories already present"
+		return "= Directories already present"
 	case engine.ActionCleanRemove:
-		return "- dead links to remove"
+		return "- Dead links to remove"
 	case engine.ActionShellRun:
-		return "$ shell commands to run"
+		return "$ Shell commands to run"
 	}
 
-	return "? unknown"
+	return "? Unknown"
 }
 
 func formatAction(a engine.Action) string {
@@ -145,7 +145,7 @@ func resolveProfilePaths(baseAbs, configPath string, profiles []string) ([]strin
 	}
 
 	if len(profiles) == 0 {
-		return nil, errors.New("at least one profile is required")
+		return nil, errors.New("At least one profile is required")
 	}
 
 	out := make([]string, 0, len(profiles))
@@ -153,7 +153,7 @@ func resolveProfilePaths(baseAbs, configPath string, profiles []string) ([]strin
 	for _, name := range profiles {
 		p := filepath.Join(baseAbs, "profiles", name+".conf.yaml")
 		if _, err := os.Stat(p); err != nil {
-			return nil, fmt.Errorf("profile %q not found at %s", name, p)
+			return nil, fmt.Errorf("Profile %q not found at %s", name, p)
 		}
 
 		out = append(out, p)

@@ -17,11 +17,11 @@ type CompletionCmd struct {
 func (c *CompletionCmd) Execute(_ []string) error {
 	switch strings.ToLower(c.Args.Shell) {
 	case "bash":
-		fmt.Print(bashCompletion)
+		fmt.Fprint(c.IO().Out, bashCompletion)
 	case "zsh":
-		fmt.Print(zshCompletion)
+		fmt.Fprint(c.IO().Out, zshCompletion)
 	case "fish":
-		fmt.Print(fishCompletion)
+		fmt.Fprint(c.IO().Out, fishCompletion)
 	default:
 		return fmt.Errorf("unknown shell %q — supported: bash, zsh, fish", c.Args.Shell)
 	}
@@ -37,12 +37,50 @@ _dfm_completion() {
 
     local subcommands="apply diff doctor list status completion"
 
-    if [[ $cword -eq 1 ]]; then
-        COMPREPLY=($(compgen -W "$subcommands" -- "$cur"))
+    # Global flag completions
+    case "$prev" in
+    -C|--dir)
+        _filedir -d
+        return
+        ;;
+    -c|--config)
+        _filedir
+        return
+        ;;
+    --color)
+        COMPREPLY=($(compgen -W "auto always never" -- "$cur"))
+        return
+        ;;
+    esac
+
+    local global_flags="-C --dir -c --config --verbose -q --quiet --color"
+
+    # No subcommand seen yet — offer subcommands and global flags.
+    # Skip values of flags that consume the next word (-C, --dir, -c, --config, --color)
+    # so a directory named "apply" passed to -C is not mistaken for the subcommand.
+    local sub=""
+    local i skip=0
+    for (( i=1; i<cword; i++ )); do
+        if (( skip )); then skip=0; continue; fi
+        case "${words[i]}" in
+        -C|--dir|-c|--config|--color) skip=1 ;;
+        --verbose|-q|--quiet) ;;
+        -*)  ;;
+        *)
+            if [[ " $subcommands " == *" ${words[i]} "* ]]; then
+                sub="${words[i]}"
+            fi
+            break
+            ;;
+        esac
+    done
+
+    if [[ -z "$sub" ]]; then
+        COMPREPLY=($(compgen -W "$subcommands $global_flags" -- "$cur"))
         return
     fi
 
-    case "${words[1]}" in
+    case "$sub" in
     apply|diff)
         local profiles
         profiles=$(dfm -C "${DFM_DIR:-.}" list 2>/dev/null)
@@ -66,7 +104,8 @@ _dfm() {
         '(-C --dir)'{-C,--dir}'[base directory]:dir:_files -/' \
         '(-c --config)'{-c,--config}'[config path]:file:_files' \
         '--verbose[enable verbose (debug) logging]' \
-        '(-q --quiet)'{-q,--quiet}'[suppress non-error output]' \
+        '(-q --quiet)'{-q,--quiet}'[suppress progress output]' \
+        '--color[colorize output]:color:(auto always never)' \
         '1: :->subcommand' \
         '*: :->args'
 
@@ -112,7 +151,8 @@ complete -c dfm -f
 complete -c dfm -s C -l dir     -r -d 'Base directory'      -F
 complete -c dfm -s c -l config  -r -d 'Config path'         -F
 complete -c dfm      -l verbose     -d 'Enable verbose (debug) logging'
-complete -c dfm -s q -l quiet      -d 'Suppress non-error output'
+complete -c dfm -s q -l quiet      -d 'Suppress progress output'
+complete -c dfm      -l color   -r -d 'Colorize output (auto, always, never)' -a 'auto always never'
 
 # Subcommands
 complete -c dfm -n '__fish_use_subcommand' -a apply      -d 'Apply one or more profiles'

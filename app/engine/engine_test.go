@@ -3,6 +3,7 @@ package engine
 import (
 	"bytes"
 	"context"
+	"io"
 	"log"
 	"os"
 	"path/filepath"
@@ -10,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/bitcldr/dfm/app/config"
+	"github.com/bitcldr/dfm/app/iostreams"
 )
 
 // captureLog redirects the standard logger to a buffer for the duration of
@@ -407,6 +409,67 @@ func TestDefaults_AppliedToLaterDirectives(t *testing.T) {
 // linkPath returns a LinkOptions with Path set, the common test shorthand.
 func linkPath(p string) config.LinkOptions {
 	s := p
-
 	return config.LinkOptions{Path: &s}
+}
+
+func TestShell_SubprocessStdoutUsesIOStreams(t *testing.T) {
+	base, _ := sandbox(t)
+	out := &bytes.Buffer{}
+	ios := iostreams.NewTest(out, io.Discard)
+
+	trueVal := true
+	cfg := &config.Config{Directives: []config.Directive{{
+		Kind: config.KindShell,
+		Shell: &config.Shell{Entries: []config.ShellEntry{
+			{Command: "echo hello", Options: config.ShellOptions{Stdout: &trueVal}},
+		}},
+	}}}
+
+	e := New(base)
+	e.IO = ios
+
+	if _, err := e.Apply(context.Background(), cfg); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(out.String(), "hello") {
+		t.Errorf("subprocess stdout must go through IOStreams.Out, got: %q", out)
+	}
+}
+
+func TestShell_GlobalQuietDoesNotSuppressSubprocessStreams(t *testing.T) {
+	// Global --quiet suppresses dfm's own progress, not subprocess output.
+	// Subprocess stdout/stderr are controlled only by the directive's own quiet option.
+	base, _ := sandbox(t)
+	out := &bytes.Buffer{}
+	errOut := &bytes.Buffer{}
+	ios := iostreams.NewTest(out, errOut)
+	ios.SetQuiet() // suppress dfm progress only
+
+	trueVal := true
+	cfg := &config.Config{Directives: []config.Directive{{
+		Kind: config.KindShell,
+		Shell: &config.Shell{Entries: []config.ShellEntry{
+			{
+				Command: "printf 'stdout-data' && printf 'stderr-data' >&2",
+				Options: config.ShellOptions{Stdout: &trueVal, Stderr: &trueVal},
+			},
+		}},
+	}}}
+
+	e := New(base)
+	e.IO = ios
+
+	if _, err := e.Apply(context.Background(), cfg); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(out.String(), "stdout-data") {
+		t.Errorf("subprocess stdout must flow through under --quiet, got out: %q", out)
+	}
+	if !strings.Contains(errOut.String(), "stderr-data") {
+		t.Errorf("subprocess stderr must flow through under --quiet, got errOut: %q", errOut)
+	}
+	// dfm's own ShellCmd progress line must be suppressed.
+	if strings.Contains(errOut.String(), "printf") {
+		t.Errorf("dfm progress (ShellCmd) must be suppressed by --quiet, got errOut: %q", errOut)
+	}
 }

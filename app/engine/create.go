@@ -2,9 +2,8 @@ package engine
 
 import (
 	"errors"
-	"os"
-
 	"log"
+	"os"
 
 	"github.com/bitcldr/dfm/app/config"
 )
@@ -21,7 +20,7 @@ func (e *Engine) runCreate(c *config.Create, tally *Tally) error {
 
 		if _, err := os.Stat(path); err == nil {
 			log.Printf("[DEBUG] create stat path=%s exists=true", path)
-			log.Printf("[INFO] path exists %s", path)
+			e.io().PathExists(path)
 			e.record(ActionCreateExists, path, "")
 			continue
 		} else if !errors.Is(err, os.ErrNotExist) {
@@ -42,7 +41,7 @@ func (e *Engine) runCreate(c *config.Create, tally *Tally) error {
 			}
 		}
 
-		log.Printf("[INFO] created %s", path)
+		e.io().Created(path)
 		e.record(ActionCreateDir, path, "")
 		tally.Created++
 	}

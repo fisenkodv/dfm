@@ -19,6 +19,7 @@ import (
 	"github.com/jessevdk/go-flags"
 
 	"github.com/bitcldr/dfm/app/cmd"
+	"github.com/bitcldr/dfm/app/iostreams"
 )
 
 // revision is set at build time via -ldflags "-X main.revision=...".
@@ -31,7 +32,8 @@ type Opts struct {
 	BaseDir    string `short:"C" long:"dir" description:"base directory for resolving profiles and sources" default:"."`
 	ConfigPath string `short:"c" long:"config" description:"explicit config path (overrides profile name lookup)"`
 	Verbose    bool   `long:"verbose" description:"enable verbose (debug) logging"`
-	Quiet      bool   `short:"q" long:"quiet" description:"suppress info output (warnings and errors still shown)"`
+	Quiet      bool   `short:"q" long:"quiet" description:"suppress progress output (warnings and errors still shown)"`
+	Color      string `long:"color" description:"colorize output (auto, always, never)" default:"auto" choice:"auto" choice:"always" choice:"never"`
 
 	Apply      cmd.ApplyCmd      `command:"apply" description:"apply one or more profiles"`
 	Diff       cmd.DiffCmd       `command:"diff" description:"show planned changes without writing"`
@@ -59,7 +61,10 @@ func run() int {
 		if opts.Verbose && opts.Quiet {
 			return fmt.Errorf("--verbose and --quiet are mutually exclusive")
 		}
-		setupLogger(opts.Verbose, opts.Quiet)
+
+		ios := iostreams.New()
+		ios.SetColorPolicy(opts.Color)
+		setupLogger(opts.Verbose, opts.Quiet, ios)
 
 		if c, ok := command.(cmd.ContextSetter); ok {
 			c.SetContext(ctx)
@@ -71,6 +76,10 @@ func run() int {
 				ConfigPath: opts.ConfigPath,
 				Revision:   revision,
 			})
+		}
+
+		if c, ok := command.(cmd.IOSetter); ok {
+			c.SetIO(ios)
 		}
 
 		return command.Execute(args)
@@ -89,27 +98,35 @@ func run() int {
 	return 0
 }
 
-func setupLogger(verbose, quiet bool) {
+func setupLogger(verbose, quiet bool, ios *iostreams.IOStreams) {
 	logOpts := make([]lgr.Option, 0, 2)
 	logOpts = append(logOpts, lgr.Format("{{.Message}}"))
 
 	switch {
 	case verbose:
-		logOpts = []lgr.Option{lgr.Debug, lgr.Msec, lgr.LevelBraces, lgr.StackTraceOnError}
+		logOpts = []lgr.Option{lgr.Debug, lgr.Msec, lgr.LevelBraces, lgr.StackTraceOnError,
+			lgr.Out(ios.ErrOut), lgr.Err(ios.ErrOut)}
 	case quiet:
-		logOpts = []lgr.Option{lgr.Out(io.Discard), lgr.Err(io.Discard)}
+		// Suppress INFO output only; WARN/ERROR (routed to lgr.Err) remain visible.
+		logOpts = []lgr.Option{lgr.Format("{{.Message}}"), lgr.Out(io.Discard), lgr.Err(ios.ErrOut)}
+		ios.SetQuiet()
+	default:
+		logOpts = append(logOpts, lgr.Out(ios.ErrOut), lgr.Err(ios.ErrOut))
 	}
 
-	colorizer := lgr.Mapper{
-		ErrorFunc:  func(s string) string { return color.New(color.FgHiRed).Sprint(s) },
-		WarnFunc:   func(s string) string { return color.New(color.FgRed).Sprint(s) },
-		InfoFunc:   func(s string) string { return color.New(color.FgYellow).Sprint(s) },
-		DebugFunc:  func(s string) string { return color.New(color.FgWhite).Sprint(s) },
-		CallerFunc: func(s string) string { return color.New(color.FgBlue).Sprint(s) },
-		TimeFunc:   func(s string) string { return color.New(color.FgCyan).Sprint(s) },
+	// Only colorize logger output when ErrOut supports ANSI — respects --color,
+	// NO_COLOR, CLICOLOR_FORCE, and TTY detection from the same policy as IOStreams.
+	if ios.ErrColorEnabled() {
+		colorizer := lgr.Mapper{
+			ErrorFunc:  func(s string) string { return color.New(color.FgHiRed).Sprint(s) },
+			WarnFunc:   func(s string) string { return color.New(color.FgRed).Sprint(s) },
+			DebugFunc:  func(s string) string { return color.New(color.FgWhite).Sprint(s) },
+			CallerFunc: func(s string) string { return color.New(color.FgBlue).Sprint(s) },
+			TimeFunc:   func(s string) string { return color.New(color.FgCyan).Sprint(s) },
+		}
+		logOpts = append(logOpts, lgr.Map(colorizer))
 	}
 
-	logOpts = append(logOpts, lgr.Map(colorizer))
 	lgr.SetupStdLogger(logOpts...)
 	lgr.Setup(logOpts...)
 }

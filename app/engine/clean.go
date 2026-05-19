@@ -2,11 +2,10 @@ package engine
 
 import (
 	"errors"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
-
-	"log"
 
 	"github.com/bitcldr/dfm/app/config"
 )
@@ -109,7 +108,7 @@ func (e *Engine) cleanDir(dir string, baseCandidates []string, force, recursive 
 			}
 		}
 
-		log.Printf("[INFO] removed dead link %s -> %s", path, points)
+		e.io().RemovedDeadLink(path, points)
 		e.record(ActionCleanRemove, path, points)
 		tally.Cleaned++
 	}

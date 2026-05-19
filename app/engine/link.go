@@ -93,7 +93,7 @@ func (e *Engine) linkOne(entry config.LinkEntry, tally *Tally) error {
 		}
 		log.Printf("[DEBUG] existing symlink=%s current=%s desired=%s", linkPath, current, desired)
 		if current == desired {
-			log.Printf("[INFO] link ok %s -> %s", entry.Target, desired)
+			e.io().LinkOK(entry.Target, desired)
 			e.record(ActionLinkExists, linkPath, desired)
 			tally.LinksOK++
 			return nil
@@ -102,7 +102,7 @@ func (e *Engine) linkOne(entry config.LinkEntry, tally *Tally) error {
 			if err := e.performRelink(linkPath, desired); err != nil {
 				return err
 			}
-			log.Printf("[INFO] relinked %s -> %s", linkPath, desired)
+			e.io().Relinked(linkPath, desired)
 			e.record(ActionLinkRelink, linkPath, desired)
 			tally.LinksRelinked++
 			return nil
@@ -146,7 +146,7 @@ func (e *Engine) createSymlink(linkPath, target string, tally *Tally) error {
 			return err
 		}
 	}
-	log.Printf("[INFO] linked %s -> %s", linkPath, target)
+	e.io().Linked(linkPath, target)
 	e.record(ActionLinkCreate, linkPath, target)
 	tally.LinksCreated++
 	return nil
