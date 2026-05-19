@@ -172,6 +172,7 @@ var (
 
 // ── engine progress (→ ErrOut, gated by quiet) ───────────────────────────────
 
+// Linked reports that a new symlink was created from→to.
 func (ios *IOStreams) Linked(from, to string) {
 	e := ios.errColor
 	ios.progressf("%s %s %s %s\n",
@@ -179,6 +180,7 @@ func (ios *IOStreams) Linked(from, to string) {
 		cs(dimColor, "→", e), cs(dimColor, to, e))
 }
 
+// Relinked reports that a stale symlink was replaced with from→to.
 func (ios *IOStreams) Relinked(from, to string) {
 	e := ios.errColor
 	ios.progressf("%s %s %s %s\n",
@@ -186,6 +188,7 @@ func (ios *IOStreams) Relinked(from, to string) {
 		cs(dimColor, "→", e), cs(dimColor, to, e))
 }
 
+// LinkOK reports that an existing symlink already points at the correct target.
 func (ios *IOStreams) LinkOK(from, to string) {
 	e := ios.errColor
 	ios.progressf("%s %s %s %s\n",
@@ -193,6 +196,7 @@ func (ios *IOStreams) LinkOK(from, to string) {
 		cs(whiteColor, "→", e), cs(dimColor, to, e))
 }
 
+// BackedUp reports that a pre-existing file was moved from→to before linking.
 func (ios *IOStreams) BackedUp(from, to string) {
 	e := ios.errColor
 	ios.progressf("%s %s %s %s\n",
@@ -200,6 +204,7 @@ func (ios *IOStreams) BackedUp(from, to string) {
 		cs(dimColor, "→", e), cs(dimColor, to, e))
 }
 
+// RemovedDeadLink reports that a dangling symlink pointing from→to was removed.
 func (ios *IOStreams) RemovedDeadLink(from, to string) {
 	e := ios.errColor
 	ios.progressf("%s %s %s %s\n",
@@ -207,21 +212,25 @@ func (ios *IOStreams) RemovedDeadLink(from, to string) {
 		cs(dimColor, "→", e), cs(dimColor, to, e))
 }
 
+// PathExists reports that a create target already exists and was skipped.
 func (ios *IOStreams) PathExists(path string) {
 	e := ios.errColor
 	ios.progressf("%s %s\n", cs(boldColor, "Path exists", e), cs(dimColor, path, e))
 }
 
+// Created reports that a directory was created at path.
 func (ios *IOStreams) Created(path string) {
 	e := ios.errColor
 	ios.progressf("%s %s\n", cs(boldGreenColor, "Created", e), cs(whiteColor, path, e))
 }
 
+// Applying reports that a profile at path is being applied.
 func (ios *IOStreams) Applying(path string) {
 	e := ios.errColor
 	ios.progressf("%s %s\n", cs(boldColor, "Applying", e), cs(dimColor, path, e))
 }
 
+// WouldApply reports that a profile at path would be applied in a dry run.
 func (ios *IOStreams) WouldApply(path string) {
 	e := ios.errColor
 	ios.progressf("%s %s\n", cs(boldCyanColor, "Would apply", e), cs(whiteColor, path, e))
@@ -287,6 +296,7 @@ func (ios *IOStreams) DoctorDone(ok, problems int) {
 	)
 }
 
+// DoctorItem writes one indented problem line under a DoctorDone summary.
 func (ios *IOStreams) DoctorItem(problem string) {
 	e := ios.errColor
 	fmt.Fprintf(ios.ErrOut, "  %s\n", cs(dimColor, problem, e))
@@ -294,39 +304,46 @@ func (ios *IOStreams) DoctorItem(problem string) {
 
 // ── status output (→ Out / stdout) ───────────────────────────────────────────
 
+// StatusLine writes a "label value" pair to stdout.
 func (ios *IOStreams) StatusLine(label, value string) {
 	o := ios.outColor
 	fmt.Fprintf(ios.Out, "%s %s\n", cs(boldColor, label, o), cs(dimColor, value, o))
 }
 
+// StatusLineWithMeta writes a "label value (meta)" triple to stdout.
 func (ios *IOStreams) StatusLineWithMeta(label, value, meta string) {
 	o := ios.outColor
 	fmt.Fprintf(ios.Out, "%s %s %s\n",
 		cs(boldColor, label, o), cs(dimColor, value, o), cs(whiteColor, meta, o))
 }
 
+// StatusEmpty writes a dim placeholder message when there is no status to show.
 func (ios *IOStreams) StatusEmpty(msg string) {
 	fmt.Fprintln(ios.Out, cs(dimColor, msg, ios.outColor))
 }
 
 // ── diff output (→ Out / stdout) ─────────────────────────────────────────────
 
+// DiffHeader writes a section header with an item count for the diff output.
 func (ios *IOStreams) DiffHeader(header string, n int) {
 	o := ios.outColor
 	fmt.Fprintf(ios.Out, "%s %s\n",
 		cs(boldWhiteColor, header, o), cs(dimColor, "("+strconv.Itoa(n)+")", o))
 }
 
+// DiffAction writes one indented action line in the diff output.
 func (ios *IOStreams) DiffAction(text string) {
 	fmt.Fprintf(ios.Out, "  %s\n", cs(whiteColor, text, ios.outColor))
 }
 
+// DiffEmpty writes a "no changes" placeholder when the diff is empty.
 func (ios *IOStreams) DiffEmpty() {
 	fmt.Fprintln(ios.Out, cs(dimColor, "No changes", ios.outColor))
 }
 
 // ── list output (→ Out / stdout) ─────────────────────────────────────────────
 
+// ListItem writes a single profile name to stdout, one per line.
 func (ios *IOStreams) ListItem(name string) {
 	fmt.Fprintln(ios.Out, name)
 }

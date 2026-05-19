@@ -99,19 +99,18 @@ func run() int {
 }
 
 func setupLogger(verbose, quiet bool, ios *iostreams.IOStreams) {
-	logOpts := make([]lgr.Option, 0, 2)
-	logOpts = append(logOpts, lgr.Format("{{.Message}}"))
+	logOpts := make([]lgr.Option, 0, 5)
 
 	switch {
 	case verbose:
-		logOpts = []lgr.Option{lgr.Debug, lgr.Msec, lgr.LevelBraces, lgr.StackTraceOnError,
-			lgr.Out(ios.ErrOut), lgr.Err(ios.ErrOut)}
+		logOpts = append(logOpts, lgr.Debug, lgr.Msec, lgr.LevelBraces, lgr.StackTraceOnError,
+			lgr.Out(ios.ErrOut), lgr.Err(ios.ErrOut))
 	case quiet:
 		// Suppress INFO output only; WARN/ERROR (routed to lgr.Err) remain visible.
-		logOpts = []lgr.Option{lgr.Format("{{.Message}}"), lgr.Out(io.Discard), lgr.Err(ios.ErrOut)}
+		logOpts = append(logOpts, lgr.Format("{{.Message}}"), lgr.Out(io.Discard), lgr.Err(ios.ErrOut))
 		ios.SetQuiet()
 	default:
-		logOpts = append(logOpts, lgr.Out(ios.ErrOut), lgr.Err(ios.ErrOut))
+		logOpts = append(logOpts, lgr.Format("{{.Message}}"), lgr.Out(ios.ErrOut), lgr.Err(ios.ErrOut))
 	}
 
 	// Only colorize logger output when ErrOut supports ANSI — respects --color,
