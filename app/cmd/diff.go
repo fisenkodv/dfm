@@ -145,7 +145,7 @@ func resolveProfilePaths(baseAbs, configPath string, profiles []string) ([]strin
 	}
 
 	if len(profiles) == 0 {
-		return nil, errors.New("At least one profile is required")
+		return nil, errors.New("at least one profile is required")
 	}
 
 	out := make([]string, 0, len(profiles))
@@ -153,7 +153,7 @@ func resolveProfilePaths(baseAbs, configPath string, profiles []string) ([]strin
 	for _, name := range profiles {
 		p := filepath.Join(baseAbs, "profiles", name+".conf.yaml")
 		if _, err := os.Stat(p); err != nil {
-			return nil, fmt.Errorf("Profile %q not found at %s", name, p)
+			return nil, fmt.Errorf("profile %q not found at %s", name, p)
 		}
 
 		out = append(out, p)
