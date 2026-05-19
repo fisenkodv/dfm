@@ -13,7 +13,7 @@ import (
 
 // newTestIO wires up a pair of buffers and returns an IOStreams suitable for
 // command tests (no color, no TTY).
-func newTestIO() (ios *iostreams.IOStreams, out *bytes.Buffer, errOut *bytes.Buffer) {
+func newTestIO() (ios *iostreams.IOStreams, out, errOut *bytes.Buffer) {
 	out = &bytes.Buffer{}
 	errOut = &bytes.Buffer{}
 	ios = iostreams.NewTest(out, errOut)
